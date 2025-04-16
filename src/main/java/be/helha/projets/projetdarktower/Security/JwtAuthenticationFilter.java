@@ -1,54 +1,50 @@
-package be.helha.projets.projetdarktower.Inscription;
+package be.helha.projets.projetdarktower.Security;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
-public class JwtAuthentificationFilter extends OncePerRequestFilter {
+import org.springframework.stereotype.Component; // Assure-toi d'importer cette annotation
 
-    private final  JwtUtils  jwtUtils;
+@Component  // Cette annotation permet à Spring de gérer JwtAuthenticationFilter comme un bean
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    public JwtAuthenticationFilter(JwtUtils jwtUtils) {
+    private final JwtUtil jwtUtils;
+
+    public JwtAuthenticationFilter(JwtUtil jwtUtils) {
         this.jwtUtils = jwtUtils;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
+
+        // Extraire le JWT de la requête
         String jwtToken = jwtUtils.extractJwtFromRequest(request);
 
         if (jwtToken != null && jwtUtils.validateJwtToken(jwtToken)) {
+            // Extraire le nom d'utilisateur
             String username = jwtUtils.getUsernameFromJwtToken(jwtToken);
 
-            List<GrantedAuthority> authorities = jwtUtils.getRolesFromJwtToken(jwtToken).stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toList());
-
-
+            // Si l'utilisateur est trouvé, créer un objet d'authentification
             if (username != null) {
-                // Créer une authentification basée sur le token
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        username, null, authorities);
+                        username, null, null);  // Pas de rôles ici, mais tu pourrais en ajouter si nécessaire
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                // Enregistrer l'authentification dans le contexte de sécurité
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
 
+        // Passer la requête au prochain filtre
         chain.doFilter(request, response);
     }
 }
-
