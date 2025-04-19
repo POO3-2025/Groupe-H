@@ -1,19 +1,20 @@
 package be.helha.projets.projetdarktower.Model;
 
-public class User {
-    private Long id;
+public class LoginRequest {
+
     private String username;
     private String password;
 
-    // Getters / Setters
-    public Long getId() {
-        return id;
+    // Constructeur par défaut
+    public LoginRequest() {}
+
+    // Constructeur avec paramètres
+    public LoginRequest(String username, String password) {
+        this.username = username;
+        this.password = password;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
+    // Getters et setters
     public String getUsername() {
         return username;
     }

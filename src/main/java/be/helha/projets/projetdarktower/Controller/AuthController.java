@@ -1,10 +1,12 @@
 package be.helha.projets.projetdarktower.Controller;
 
-
 import be.helha.projets.projetdarktower.Model.User;
-import be.helha.projets.projetdarktower.Security.JwtUtil;
+import be.helha.projets.projetdarktower.Model.LoginRequest;
 import be.helha.projets.projetdarktower.Service.UserService;
+import be.helha.projets.projetdarktower.Security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,14 +25,13 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody User user) {
-        boolean authenticated = userService.authenticate(user.getUsername(), user.getPassword());
-        if (authenticated) {
-            String token = jwtUtil.generateToken(user.getUsername());
-            return "Bonjour " + user.getUsername() + " !\nToken JWT : " + token;
-        } else {
-            return "Identifiants invalides.";
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+        // Authentifier l'utilisateur
+        if (userService.authenticate(loginRequest.getUsername(), loginRequest.getPassword())) {
+            String token = jwtUtil.generateToken(loginRequest.getUsername());
+            return ResponseEntity.ok("Token JWT : " + token);  // Réponse avec le token
         }
+        // Si l'authentification échoue, renvoyer une erreur 403
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Échec de la connexion");
     }
 }
-

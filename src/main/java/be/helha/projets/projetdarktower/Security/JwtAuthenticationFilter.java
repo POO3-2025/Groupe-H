@@ -1,50 +1,57 @@
 package be.helha.projets.projetdarktower.Security;
 
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 
-import org.springframework.stereotype.Component; // Assure-toi d'importer cette annotation
-
-@Component  // Cette annotation permet à Spring de gérer JwtAuthenticationFilter comme un bean
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtUtil jwtUtils;
+    private final JwtUtil jwtUtil;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtils) {
-        this.jwtUtils = jwtUtils;
+    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
 
-        // Extraire le JWT de la requête
-        String jwtToken = jwtUtils.extractJwtFromRequest(request);
-
-        if (jwtToken != null && jwtUtils.validateJwtToken(jwtToken)) {
-            // Extraire le nom d'utilisateur
-            String username = jwtUtils.getUsernameFromJwtToken(jwtToken);
-
-            // Si l'utilisateur est trouvé, créer un objet d'authentification
-            if (username != null) {
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        username, null, null);  // Pas de rôles ici, mais tu pourrais en ajouter si nécessaire
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Enregistrer l'authentification dans le contexte de sécurité
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
+        // 🔓 Ignorer les endpoints publics
+        String path = request.getServletPath();
+        List<String> publicEndpoints = List.of("/login", "/register");
+        if (publicEndpoints.contains(path)) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        // Passer la requête au prochain filtre
-        chain.doFilter(request, response);
+        // 🔐 Récupération du token JWT
+        String bearer = request.getHeader("Authorization");
+        String token = null;
+
+        if (bearer != null && bearer.startsWith("Bearer ")) {
+            token = bearer.substring(7);
+        }
+
+        // ✅ Si token valide → authentification
+        if (token != null && jwtUtil.validateJwtToken(token)) {
+            String username = jwtUtil.getUsernameFromJwtToken(token);
+
+            UsernamePasswordAuthenticationToken authToken =
+                    new UsernamePasswordAuthenticationToken(username, null, null);
+            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+        }
+
+        filterChain.doFilter(request, response);
     }
 }

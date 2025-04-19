@@ -20,11 +20,13 @@ public class UserService {
     }
 
     public boolean authenticate(String username, String rawPassword) {
-        try {
-            User user = userRepository.findByUsername(username);
-            return encoder.matches(rawPassword, user.getPassword());
-        } catch (Exception e) {
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            System.out.println("Utilisateur introuvable.");
             return false;
         }
+        boolean match = encoder.matches(rawPassword, user.getPassword());
+        System.out.println("Password match: " + match);
+        return match;
     }
 }

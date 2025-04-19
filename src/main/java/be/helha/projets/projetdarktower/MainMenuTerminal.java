@@ -1,6 +1,5 @@
 package be.helha.projets.projetdarktower;
 
-
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -56,16 +55,12 @@ public class MainMenuTerminal {
         String json = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
         String response = sendRequest("http://localhost:8080/login", "POST", json, null);
 
+        // Gère la réponse de manière appropriée
         if (response.contains("Token JWT")) {
             jwtToken = response.split("Token JWT : ")[1].trim();
-            System.out.println("Connexion réussie !");
+            System.out.println("Connexion reussie !");
             System.out.println("Bonjour " + username + " !");
-            System.out.println("Token : " + jwtToken);
-
-            // Tester un endpoint protégé
-            /*System.out.println("\nAccès au profil sécurisé :");
-            String secure = sendRequest("http://localhost:8080/profile", "GET", null, jwtToken);
-            System.out.println("Réponse : " + secure); */
+            //System.out.println("Token : " + jwtToken);
         } else {
             System.out.println("Échec de la connexion : " + response);
         }
@@ -98,8 +93,8 @@ public class MainMenuTerminal {
             }
             return response.toString();
         } catch (IOException e) {
+            // Si il y a une erreur, on retourne le code d'erreur
             return "Erreur : " + con.getResponseCode();
         }
     }
 }
-
