@@ -8,29 +8,66 @@ import java.util.Scanner;
 public class MainMenuTerminal {
 
     private static String jwtToken = null;
+    private static boolean isLoggedIn = false; // Variable pour vérifier si l'utilisateur est connecté
 
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
         int choice;
 
         do {
-            System.out.println("===== MENU =====");
-            System.out.println("1. S'inscrire");
-            System.out.println("2. Se connecter");
-            System.out.println("3. Quitter");
-            System.out.print("Choix : ");
-            choice = scanner.nextInt();
-            scanner.nextLine(); // consomme le retour ligne
-
-            switch (choice) {
-                case 1 -> register(scanner);
-                case 2 -> login(scanner);
-                case 3 -> System.out.println("À bientôt !");
-                default -> System.out.println("Choix invalide.");
+            // Afficher le menu principal si l'utilisateur n'est pas connecté
+            if (!isLoggedIn) {
+                showMainMenu(scanner);
+            } else {
+                // Afficher le menu après connexion
+                showLoggedInMenu(scanner);
             }
-        } while (choice != 3);
+        } while (true);
 
-        scanner.close();
+
+    }
+
+    private static void showMainMenu(Scanner scanner) throws Exception {
+        System.out.println("===== MENU DarkTower =====");
+        System.out.println("1. S'inscrire");
+        System.out.println("2. Se connecter");
+        System.out.println("3. Quitter");
+        System.out.print("Choix : ");
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Consomme le retour ligne
+
+        switch (choice) {
+            case 1 -> register(scanner);
+            case 2 -> login(scanner);
+            case 3 -> {
+                System.out.println("A bientot !");
+                System.exit(0); // Quitter l'application
+            }
+            default -> System.out.println("Choix invalide.");
+        }
+    }
+
+    private static void showLoggedInMenu(Scanner scanner) {
+        System.out.println("===== Bienvenue dans DarkTower =====");
+        System.out.println("1. Quitter");
+        System.out.println("2. Deconnexion");
+        System.out.print("Choix : ");
+        int choice = scanner.nextInt();
+        scanner.nextLine(); // Consomme le retour ligne
+
+        switch (choice) {
+            case 1 -> {
+                System.out.println("A bientot !");
+                System.exit(0); // Quitter l'application
+            }
+            case 2 -> {
+                System.out.println("Deconnexion reussie !");
+                isLoggedIn = false;  // Réinitialiser l'état de connexion
+                jwtToken = null;  // Effacer le token JWT
+                System.out.println("Vous etes deconnecte.");
+            }
+            default -> System.out.println("Choix invalide.");
+        }
     }
 
     private static void register(Scanner scanner) throws Exception {
@@ -55,12 +92,9 @@ public class MainMenuTerminal {
         String json = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
         String response = sendRequest("http://localhost:8080/login", "POST", json, null);
 
-        // Gère la réponse de manière appropriée
-        if (response.contains("Token JWT")) {
-            jwtToken = response.split("Token JWT : ")[1].trim();
-            System.out.println("Connexion reussie !");
-            System.out.println("Bonjour " + username + " !");
-            //System.out.println("Token : " + jwtToken);
+        if (response.contains("Bienvenue")) {
+            System.out.println(response); // Afficher le message de bienvenue
+            isLoggedIn = true; // Utilisateur connecté
         } else {
             System.out.println("Échec de la connexion : " + response);
         }
@@ -93,7 +127,6 @@ public class MainMenuTerminal {
             }
             return response.toString();
         } catch (IOException e) {
-            // Si il y a une erreur, on retourne le code d'erreur
             return "Erreur : " + con.getResponseCode();
         }
     }
