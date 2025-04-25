@@ -1,16 +1,44 @@
 package be.helha.projets.projetdarktower.Repository;
 
 import be.helha.projets.projetdarktower.Model.User;
+import org.json.JSONObject;
 import org.springframework.stereotype.Repository;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.*;
 
 @Repository
 public class UserRepository {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/projetdarktower";
-    private static final String USER = "root";
-    private static final String PASSWORD = ""; // XAMPP par défaut
+    private static String URL;
+    private static String USER;
+    private static String PASSWORD;
+
+    static {
+        try {
+            // Charger le fichier config.json
+            FileReader reader = new FileReader("src/main/resources/static/config.json");
+            StringBuilder jsonContent = new StringBuilder();
+            int i;
+            while ((i = reader.read()) != -1) {
+                jsonContent.append((char) i);
+            }
+            reader.close();
+
+            // Analyser le JSON
+            JSONObject config = new JSONObject(jsonContent.toString());
+            JSONObject dbConfig = config.getJSONObject("db");
+
+            // Récupérer les informations de connexion à la base de données
+            URL = dbConfig.getString("url");
+            USER = dbConfig.getString("username");
+            PASSWORD = dbConfig.getString("password");
+
+        } catch (IOException e) {
+            System.err.println("Erreur lors de la lecture du fichier config.json : " + e.getMessage());
+        }
+    }
 
     public void save(User user) {
         String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
