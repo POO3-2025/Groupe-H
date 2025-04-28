@@ -1,0 +1,181 @@
+package be.helha.projets.projetdarktower;
+
+import com.googlecode.lanterna.TerminalSize;
+import com.googlecode.lanterna.gui2.*;
+import com.googlecode.lanterna.gui2.dialogs.MessageDialog;
+import com.googlecode.lanterna.screen.Screen;
+import com.googlecode.lanterna.screen.TerminalScreen;
+import com.googlecode.lanterna.terminal.swing.SwingTerminalFrame;
+import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
+import com.googlecode.lanterna.terminal.Terminal;
+
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class MainLanterna {
+
+    private static String jwtToken = null;
+    private static boolean isLoggedIn = false;
+
+    public static void main(String[] args) {
+        try {
+
+            DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
+            terminalFactory.setInitialTerminalSize(new TerminalSize(80, 24));
+            SwingTerminalFrame terminal = terminalFactory.createSwingTerminal();
+            terminal.setVisible(true);
+            terminal.setResizable(false);
+
+
+            Screen screen = new TerminalScreen(terminal);
+            screen.startScreen();
+
+            WindowBasedTextGUI textGUI = new MultiWindowTextGUI(screen);
+            showMainMenu(textGUI, screen);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void showMainMenu(WindowBasedTextGUI gui, Screen screen) {
+        BasicWindow window = new BasicWindow("Menu DarkTower");
+        Panel panel = new Panel(new GridLayout(1));
+
+        panel.addComponent(new Label("===== MENU DarkTower ====="));
+        panel.addComponent(new Button("1. S'inscrire", () -> showRegisterMenu(gui)));
+        panel.addComponent(new Button("2. Se connecter", () -> showLoginMenu(gui)));
+        panel.addComponent(new Button("3. Quitter", () -> {
+            try {
+                screen.stopScreen();
+                System.exit(0);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }));
+
+        window.setComponent(panel);
+        gui.addWindowAndWait(window);
+    }
+
+    private static void showRegisterMenu(WindowBasedTextGUI gui) {
+        BasicWindow window = new BasicWindow("Inscription");
+        Panel panel = new Panel(new GridLayout(2));
+
+        TextBox usernameBox = new TextBox();
+        TextBox passwordBox = new TextBox().setMask('*');
+
+        panel.addComponent(new Label("Nom d'utilisateur :"));
+        panel.addComponent(usernameBox);
+        panel.addComponent(new Label("Mot de passe :"));
+        panel.addComponent(passwordBox);
+
+        panel.addComponent(new EmptySpace());
+        panel.addComponent(new Button("S'inscrire", () -> {
+            try {
+                String json = "{\"username\":\"" + usernameBox.getText() + "\",\"password\":\"" + passwordBox.getText() + "\"}";
+                String response = sendRequest("http://localhost:8080/register", "POST", json, null);
+                MessageDialog.showMessageDialog(gui, "Résultat", response);
+                window.close();
+            } catch (Exception e) {
+                MessageDialog.showMessageDialog(gui, "Erreur", e.getMessage());
+            }
+        }));
+
+        window.setComponent(panel);
+        gui.addWindowAndWait(window);
+    }
+
+    private static void showLoginMenu(WindowBasedTextGUI gui) {
+        BasicWindow window = new BasicWindow("Connexion");
+        Panel panel = new Panel(new GridLayout(2));
+
+        TextBox usernameBox = new TextBox();
+        TextBox passwordBox = new TextBox().setMask('*');
+
+        panel.addComponent(new Label("Nom d'utilisateur :"));
+        panel.addComponent(usernameBox);
+        panel.addComponent(new Label("Mot de passe :"));
+        panel.addComponent(passwordBox);
+
+        panel.addComponent(new EmptySpace());
+        panel.addComponent(new Button("Connexion", () -> {
+            try {
+                String json = "{\"username\":\"" + usernameBox.getText() + "\",\"password\":\"" + passwordBox.getText() + "\"}";
+                String response = sendRequest("http://localhost:8080/login", "POST", json, null);
+                if (response.contains("Bienvenue")) {
+                    isLoggedIn = true;
+                    jwtToken = "dummy";
+                    MessageDialog.showMessageDialog(gui, "Succès", response);
+                    window.close();
+                    showLoggedInMenu(gui);
+                } else {
+                    MessageDialog.showMessageDialog(gui, "Erreur", response);
+                }
+            } catch (Exception e) {
+                MessageDialog.showMessageDialog(gui, "Erreur", e.getMessage());
+            }
+        }));
+
+        window.setComponent(panel);
+        gui.addWindowAndWait(window);
+    }
+
+    private static void showLoggedInMenu(WindowBasedTextGUI gui) {
+        BasicWindow window = new BasicWindow("Connecté");
+
+        Panel panel = new Panel(new GridLayout(1));
+        panel.addComponent(new Label("Bienvenue dans DarkTower !"));
+
+        panel.addComponent(new Button("Déconnexion", () -> {
+            isLoggedIn = false;
+            jwtToken = null;
+            MessageDialog.showMessageDialog(gui, "Info", "Déconnecté avec succès.");
+            window.close();
+        }));
+
+        panel.addComponent(new Button("Quitter", () -> {
+            try {
+                window.close();
+                System.exit(0);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }));
+
+        window.setComponent(panel);
+        gui.addWindowAndWait(window);
+    }
+
+    private static String sendRequest(String urlString, String method, String body, String token) throws Exception {
+        URL url = new URL(urlString);
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setRequestMethod(method);
+        con.setRequestProperty("Content-Type", "application/json");
+
+        if (token != null) {
+            con.setRequestProperty("Authorization", "Bearer " + token);
+        }
+
+        con.setDoOutput(true);
+        if (body != null) {
+            try (OutputStream os = con.getOutputStream()) {
+                byte[] input = body.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+        }
+
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(con.getInputStream(), "utf-8"))) {
+            StringBuilder response = new StringBuilder();
+            String responseLine;
+            while ((responseLine = br.readLine()) != null) {
+                response.append(responseLine.trim());
+            }
+            return response.toString();
+        } catch (IOException e) {
+            return "Erreur HTTP : " + con.getResponseCode();
+        }
+    }
+}
