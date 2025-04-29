@@ -2,9 +2,12 @@ package be.helha.projets.projetdarktower.Service;
 
 import be.helha.projets.projetdarktower.Model.*;
 
+import org.springframework.stereotype.Service; // Importer cette annotation
+
 import java.util.HashMap;
 import java.util.Map;
 
+@Service // Ajoute cette annotation pour définir CharacterService comme un bean Spring
 public class CharacterService {
 
     private Map<String, Personnage> personnages = new HashMap<>();
@@ -18,14 +21,5 @@ public class CharacterService {
 
     public Personnage selectCharacter(String characterId) {
         return personnages.get(characterId);
-    }
-
-    public void attack(CharacterService characterService, AttackRequest attackRequest) {
-        Personnage attacker = personnages.get(attackRequest.getId());
-        Personnage target = personnages.get(attackRequest.getTargetId());
-
-        if (attacker != null && target != null) {
-            attacker.attaquer(target, attackRequest.getAttackType());
-        }
     }
 }

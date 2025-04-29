@@ -23,9 +23,5 @@ public class CharacterController {
         }
     }
 
-    @PostMapping("/{id}/attack")
-    public ResponseEntity<String> attackCharacter(@PathVariable String id, @RequestBody AttackRequest request) {
-        characterService.attack(characterService, request);
-        return ResponseEntity.ok("Attaque réussie !");
-    }
+
 }
