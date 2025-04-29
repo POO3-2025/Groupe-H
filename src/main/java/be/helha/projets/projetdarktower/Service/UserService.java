@@ -29,4 +29,8 @@ public class UserService {
         System.out.println("Password match: " + match);
         return match;
     }
+    public boolean userExists(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
 }

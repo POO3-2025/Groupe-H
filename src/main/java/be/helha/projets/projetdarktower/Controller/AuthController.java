@@ -19,20 +19,24 @@ public class AuthController {
     private JwtUtil jwtUtil;
 
     @PostMapping("/register")
-    public String register(@RequestBody User user) {
+    public ResponseEntity<String> register(@RequestBody User user) {
+        if (userService.userExists(user.getUsername())) {
+            // Renvoie une réponse HTTP 409 (conflit) si l'utilisateur existe
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Nom d'utilisateur existe déjà");
+        }
+
         userService.register(user);
-        return "Utilisateur enregistré avec succès !";
+        return ResponseEntity.ok("Utilisateur enregistré avec succès !");
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
-        // Authentifier l'utilisateur
         if (userService.authenticate(loginRequest.getUsername(), loginRequest.getPassword())) {
             String token = jwtUtil.generateToken(loginRequest.getUsername());
-            // Renvoi un message de bienvenue avec le nom de l'utilisateur, pas le token
             return ResponseEntity.ok("Bienvenue " + loginRequest.getUsername() + " !");
         }
-        // Si l'authentification échoue, renvoyer une erreur 403
+
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Échec de la connexion");
     }
 }
