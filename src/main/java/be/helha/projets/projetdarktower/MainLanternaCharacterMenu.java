@@ -84,17 +84,34 @@ public class MainLanternaCharacterMenu {
         gui.addWindowAndWait(window);
     }
 
-    private static void showCharacterDetails(WindowBasedTextGUI gui, String characterId, BasicWindow currentWindow) {
+    private static void showCharacterDetails(WindowBasedTextGUI gui, String characterId, BasicWindow previousWindow) {
         Personnage selectedPersonnage = characterService.selectCharacter(characterId);
 
-        if (selectedPersonnage != null) {
-            String message = "Vous avez choisi " + selectedPersonnage.getNom() + " - Points de vie : " + selectedPersonnage.getPointsDeVie();
-            MessageDialog.showMessageDialog(gui, "Personnage choisi", message);
-        } else {
+        if (selectedPersonnage == null) {
             MessageDialog.showMessageDialog(gui, "Erreur", "Personnage non trouvé.");
+            return;
         }
 
-        currentWindow.close();
-        //showMainMenu(gui); // Retourne au menu principal après sélection
+        // Ferme la fenêtre précédente (sélection)
+        previousWindow.close();
+
+        // Nouvelle fenêtre de détails
+        BasicWindow detailWindow = new BasicWindow("Détails du personnage");
+        Panel panel = new Panel(new GridLayout(1));
+
+        panel.addComponent(new Label("Vous avez choisi : " + selectedPersonnage.getNom()));
+        panel.addComponent(new Label("Points de vie : " + selectedPersonnage.getPointsDeVie()));
+
+        panel.addComponent(new EmptySpace());
+
+        panel.addComponent(new Button("OK", detailWindow::close));
+        panel.addComponent(new Button("Retour", () -> {
+            detailWindow.close();
+            showCharacterSelection(gui);
+        }));
+
+        detailWindow.setComponent(panel);
+        gui.addWindowAndWait(detailWindow);
     }
+
 }
