@@ -104,7 +104,7 @@ public class MainLanternaCharacterMenu {
 
         panel.addComponent(new EmptySpace());
 
-        panel.addComponent(new Button("OK", detailWindow::close));
+        panel.addComponent(new Button("OK", detailWindow::close)); // ouvrir le menu qui gere les items
         panel.addComponent(new Button("Retour", () -> {
             detailWindow.close();
             showCharacterSelection(gui);
