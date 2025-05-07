@@ -29,14 +29,7 @@ public class LanternaCombat {
 
             // Crée un personnage et un bot
             Personnage joueur = new FistFire("1");
-            Personnage minautor = new Personnage("bot1", "Minautor", 80, 20) {
-                @Override
-                public void attaquer(Personnage cible, String typeAttaque) {
-                    int degats = typeAttaque.equals("physique") ? attaque : attaque + 5;
-                    cible.pointsDeVie -= degats;
-                    System.out.println(nom + " inflige " + degats + " dégâts à " + cible.getNom());
-                }
-            };
+            Minotaurus minautor = new Minotaurus("Minotaure", 1);
 
             // Combat simulé
             joueur.attaquer(minautor, "magique");
