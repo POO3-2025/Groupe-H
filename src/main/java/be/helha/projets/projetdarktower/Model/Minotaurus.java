@@ -10,10 +10,11 @@ public class Minotaurus extends Personnage {
     }
 
     @Override
-    public void attaquer(Personnage cible, String typeAttaque) {
-        int degats = typeAttaque.equals("physique") ? attaque : attaque + 5;
-        cible.pointsDeVie -= degats;
-        System.out.println(nom + " (Niveau " + niveau + ") inflige " + degats + " dégâts à " + cible.getNom());
+    public void attaquer(Personnage cible) {
+        int degats = 20;
+        int vieRestante = cible.getPointsDeVie()-degats;
+        System.out.println(nom + " inflige " + degats + " dégâts à " + cible.getNom());
+        cible.setPointsDeVie(vieRestante);
     }
 
     public int getNiveau() {

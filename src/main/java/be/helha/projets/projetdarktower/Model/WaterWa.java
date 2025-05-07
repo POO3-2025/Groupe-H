@@ -7,8 +7,10 @@ public class WaterWa extends Personnage {
     }
 
     @Override
-    public void attaquer(Personnage cible, String typeAttaque) {
-        int degats = (typeAttaque.equals("magique")) ? attaque + 10 : attaque;
+    public void attaquer(Personnage cible) {
+        int degats = 40;
+        int vieRestante = cible.getPointsDeVie()-degats;
         System.out.println(nom + " inflige " + degats + " dégâts à " + cible.getNom());
+        cible.setPointsDeVie(vieRestante);
     }
 }

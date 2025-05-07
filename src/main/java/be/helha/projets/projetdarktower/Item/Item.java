@@ -1,26 +1,34 @@
 package be.helha.projets.projetdarktower.Item;
 
+import be.helha.projets.projetdarktower.Model.Personnage;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.bson.types.ObjectId;
+import java.util.UUID;
 
 public class Item {
     @JsonProperty("_id")
-    protected ObjectId id;
+    protected String id;
     protected String nom;
     protected String type;
+    protected double chanceDeDrop; // Pourcentage de chance (entre 0.0 et 100.0)
 
-    public Item(String nom) {
+    public Item(String nom,Double chanceDeDrop) {
         this.nom = nom;
-        this.type = "Épée";
-        this.id = new ObjectId();
+        this.type = "Item";
+        this.id = UUID.randomUUID().toString();
+        this.chanceDeDrop = chanceDeDrop; // Valeur par défaut (à définir selon l'objet)
     }
 
     public static class ObjectIdWrapper {
         @JsonProperty("$oid")
         private String oid;
 
-        public String getOid() { return oid; }
-        public void setOid(String oid) { this.oid = oid; }
+        public String getOid() {
+            return oid;
+        }
+
+        public void setOid(String oid) {
+            this.oid = oid;
+        }
 
         @Override
         public String toString() {
@@ -28,11 +36,17 @@ public class Item {
         }
     }
 
-    public ObjectId getId() {
+    public String UseItem(Item item, Personnage personnage) {
+        return "item bien utilise";
+    }
+
+    // Getters et setters
+
+    public String getId() {
         return id;
     }
 
-    public void setId(ObjectId id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -52,12 +66,21 @@ public class Item {
         this.type = type;
     }
 
+    public double getChanceDeDrop() {
+        return chanceDeDrop;
+    }
+
+    public void setChanceDeDrop(double chanceDeDrop) {
+        this.chanceDeDrop = chanceDeDrop;
+    }
+
     @Override
     public String toString() {
         return "Item{" +
-                "id=" + id +
+                "id='" + id + '\'' +
                 ", nom='" + nom + '\'' +
                 ", type='" + type + '\'' +
+                ", chanceDeDrop=" + chanceDeDrop +
                 '}';
     }
 }

@@ -1,7 +1,7 @@
 package be.helha.projets.projetdarktower.Controller;
 
 import be.helha.projets.projetdarktower.Model.Personnage;
-import be.helha.projets.projetdarktower.Inventaire.InventaireDAO;
+import be.helha.projets.projetdarktower.Inventaire.InventaireDAOImpl;
 import be.helha.projets.projetdarktower.Item.ItemSelectionRequest;
 import be.helha.projets.projetdarktower.Item.Item;
 import be.helha.projets.projetdarktower.Service.CharacterService;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 public class CombatController {
 
     @Autowired
-    private InventaireDAO inventaireDAO;
+    private InventaireDAOImpl inventaireDAO;  // Injection correcte d'InventaireDAOImpl
 
     @Autowired
     private CharacterService characterService;
@@ -26,12 +26,12 @@ public class CombatController {
             return ResponseEntity.status(404).body("Personnage non trouvé.");
         }
 
-        Item item = InventaireDAO.recupererItemParId(request.getItemId());
+        Item item = inventaireDAO.recupererItemParId(request.getItemId());  // Utilisation d'une instance d'InventaireDAOImpl
         if (item == null) {
             return ResponseEntity.status(404).body("Objet non trouvé.");
         }
 
-        String resultat = item.utiliser(personnage); // Supposé que ton Item a une méthode `utiliser(Personnage)`
+        String resultat = item.UseItem(item,personnage);  // Utilisation de l'item avec la méthode `utiliser` (assurez-vous qu'elle existe)
         return ResponseEntity.ok(resultat);
     }
 }

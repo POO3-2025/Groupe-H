@@ -26,10 +26,22 @@ public abstract class Personnage {
         return pointsDeVie;
     }
 
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public void setPointsDeVie(int pointsDeVie) {
+        this.pointsDeVie = pointsDeVie;
+    }
+
+    public void setAttaque(int attaque) {
+        this.attaque = attaque;
+    }
+
     public int getAttaque() {
         return attaque;
     }
 
-    public abstract void attaquer(Personnage cible, String typeAttaque);
+    public abstract void attaquer(Personnage cible);
 }
 

@@ -1,20 +1,18 @@
 package be.helha.projets.projetdarktower.Item;
 
-import org.bson.Document;
-import org.bson.types.ObjectId;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.bson.Document;
+
 
 public class Coffre extends Item {
     private static final int CAPACITE_MAX = 5;
     private final List<Item> contenu;
 
-    public Coffre(String nom) {
-        super(nom);
+    public Coffre(String nom,double chanceDeDrop) {
+        super(nom, chanceDeDrop);
         this.nom = nom;
         this.type = "Coffre";
-        this.id = new ObjectId();
         this.contenu = new ArrayList<>();
     }
 
@@ -70,18 +68,18 @@ public class Coffre extends Item {
         }
 
         return new Document()
-                .append("_id", id)
-                .append("nom", nom)
-                .append("type", type)
+                .append("_id", this.getId())  // Utilisation de l'ID généré
+                .append("nom", this.nom)
+                .append("type", this.type)
                 .append("contenu", contenuDocs);
     }
 
     // Méthode fromDocument : crée un Coffre à partir d’un Document MongoDB
     public static Coffre fromDocument(Document doc) {
         String nomCoffre = doc.getString("nom");
-        Coffre coffre = new Coffre(nomCoffre);  // ⚠️ utilise le bon constructeur
-        coffre.setId(doc.getObjectId("_id"));
-        coffre.setType(doc.getString("type"));
+        Double chanceDeDrop = doc.getDouble("chanceDeDrop");
+        Coffre coffre = new Coffre(nomCoffre,chanceDeDrop);
+        coffre.setId(doc.getString("_id"));  // Utilisation de l'ID sous forme de String
 
         List<Document> contenuDocs = doc.getList("contenu", Document.class, new ArrayList<>());
         for (Document itemDoc : contenuDocs) {
@@ -89,12 +87,11 @@ public class Coffre extends Item {
             String typeItem = itemDoc.getString("type");
 
             // Utilisation de la factory pour créer l’objet Item adapté
-            Item item = ItemFactory.creerItem(typeItem, nomItem);
-            item.setId(itemDoc.getObjectId("_id"));
+            Item item = ItemFactory.creerItem(nomItem);  // Appel à la méthode avec nom de l'item
+            item.setId(itemDoc.getString("_id")); // Properly set the ID for each item
 
-            coffre.contenu.add(item);
+            coffre.ajouterItem(item); // Add to coffre's content
         }
         return coffre;
     }
-
 }

@@ -3,10 +3,10 @@ package be.helha.projets.projetdarktower.Item;
 public class Potion extends Item {
     private int pointsDeVieRecuperes;
 
-    public Potion(String nom) {
-        super(nom);
+    public Potion(String nom,int PointsDeVieRecuperes,double chanceDeDrop) {
+        super(nom,chanceDeDrop);
         this.type = "Potion";
-        this.pointsDeVieRecuperes = 100;
+        this.pointsDeVieRecuperes = PointsDeVieRecuperes;
     }
 
     public int getPointsDeVieRecuperes() {

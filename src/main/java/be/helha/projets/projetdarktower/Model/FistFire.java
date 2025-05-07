@@ -7,8 +7,10 @@ public class FistFire extends Personnage {
     }
 
     @Override
-    public void attaquer(Personnage cible, String typeAttaque) {
-        int degats = (typeAttaque.equals("physique")) ? attaque : attaque + 10;
+    public void attaquer(Personnage cible){
+        int degats = 15;
+        int vieRestante = cible.getPointsDeVie()-degats;
         System.out.println(nom + " inflige " + degats + " dégâts à " + cible.getNom());
+        cible.setPointsDeVie(vieRestante);
     }
 }

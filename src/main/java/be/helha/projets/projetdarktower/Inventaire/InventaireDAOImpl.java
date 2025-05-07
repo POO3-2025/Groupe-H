@@ -10,12 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Repository  // Annotation pour indiquer que c'est un bean Spring
-public class InventaireDAO {
+public class InventaireDAOImpl implements InventaireDAO {
     private static final int TAILLE_MAX = 10;
     private final List<Item> emplacements = new ArrayList<>();
     private final MongoCollection<Document> collection;
 
-    public InventaireDAO() {
+    public InventaireDAOImpl() {
         MongoClient client = MongoClients.create("mongodb://localhost:27017");
         MongoDatabase database = client.getDatabase("Game"); // Mets ici le vrai nom
         this.collection = database.getCollection("Inventaire");

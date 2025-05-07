@@ -3,10 +3,10 @@ package be.helha.projets.projetdarktower.Item;
 public class Epee extends Item {
     private int degat;
 
-    public Epee(String nom) {
-        super(nom);
+    public Epee(String nom, int degat,double chanceDeDrop) {
+        super(nom,chanceDeDrop);
         this.type = "Épée";
-        this.degat = 30;
+        this.degat = degat;
     }
 
     public int getDegat() {
