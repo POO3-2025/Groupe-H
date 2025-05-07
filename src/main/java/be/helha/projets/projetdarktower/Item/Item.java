@@ -36,10 +36,6 @@ public class Item {
         }
     }
 
-    public String UseItem(Item item, Personnage personnage) {
-        return "item bien utilise";
-    }
-
     // Getters et setters
 
     public String getId() {

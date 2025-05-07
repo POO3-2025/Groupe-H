@@ -1,24 +1,24 @@
 package be.helha.projets.projetdarktower.Item;
 
-public class Epee extends Item {
-    private int degat;
+public class Weapon extends Item {
+    private int degats;
 
-    public Epee(String nom, int degat,double chanceDeDrop) {
-        super(nom,chanceDeDrop);
-        this.type = "Épée";
-        this.degat = degat;
+    public Weapon(String nom, int degats, double chanceDeDrop) {
+        super(nom, chanceDeDrop);
+        this.type = "Weapon"; // cohérence avec le nom de la classe
+        this.degats = degats;
     }
 
-    public int getDegat() {
-        return degat;
+    public int getDegats() {
+        return degats;
     }
 
-    public void setDegat(int degat) {
-        this.degat = degat;
+    public void setDegats(int degats) {
+        this.degats = degats;
     }
 
     @Override
     public String toString() {
-        return "Épée {" + super.toString() + ", dégâts=" + degat + '}';
+        return "Weapon {" + super.toString() + ", dégâts=" + degats + '}';
     }
 }

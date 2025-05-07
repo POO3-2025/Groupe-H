@@ -1,10 +1,10 @@
 package be.helha.projets.projetdarktower.Controller;
 
 import be.helha.projets.projetdarktower.Model.Personnage;
-import be.helha.projets.projetdarktower.Inventaire.InventaireDAOImpl;
 import be.helha.projets.projetdarktower.Item.ItemSelectionRequest;
 import be.helha.projets.projetdarktower.Item.Item;
 import be.helha.projets.projetdarktower.Service.CharacterService;
+import be.helha.projets.projetdarktower.Service.ItemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,24 +14,36 @@ import org.springframework.web.bind.annotation.*;
 public class CombatController {
 
     @Autowired
-    private InventaireDAOImpl inventaireDAO;  // Injection correcte d'InventaireDAOImpl
+    private ItemService itemService;
 
     @Autowired
     private CharacterService characterService;
 
     @PostMapping("/{id}/use-item")
     public ResponseEntity<String> useItem(@PathVariable String id, @RequestBody ItemSelectionRequest request) {
-        Personnage personnage = characterService.selectCharacter(id);
-        if (personnage == null) {
+        // Récupère le personnage utilisateur
+        Personnage utilisateur = characterService.selectCharacter(id);
+        if (utilisateur == null) {
             return ResponseEntity.status(404).body("Personnage non trouvé.");
         }
 
-        Item item = inventaireDAO.recupererItemParId(request.getItemId());  // Utilisation d'une instance d'InventaireDAOImpl
+        // Récupère l’item sélectionné
+        Item item = itemService.recupererItemParId(request.getItemId());
         if (item == null) {
             return ResponseEntity.status(404).body("Objet non trouvé.");
         }
 
-        String resultat = item.UseItem(item,personnage);  // Utilisation de l'item avec la méthode `utiliser` (assurez-vous qu'elle existe)
+        // Récupère la cible si un ID est fourni
+        Personnage cible = null;
+        if (request.getCibleId() != null) {
+            cible = characterService.selectCharacter(request.getCibleId());
+            if (cible == null) {
+                return ResponseEntity.status(404).body("Cible non trouvée.");
+            }
+        }
+
+        // Utilise l'item avec ou sans cible
+        String resultat = itemService.utiliserItem(item, utilisateur, cible);
         return ResponseEntity.ok(resultat);
     }
 }

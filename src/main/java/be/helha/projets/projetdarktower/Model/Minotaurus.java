@@ -16,14 +16,15 @@ public class Minotaurus extends Personnage {
         System.out.println(nom + " inflige " + degats + " dégâts à " + cible.getNom());
         cible.setPointsDeVie(vieRestante);
     }
+    public void resetPointsDeVie() {
+        this.setPointsDeVie(80 + (this.niveau * 20)); // Réinitialiser les PV en fonction du niveau
+    }
 
     public int getNiveau() {
         return niveau;
     }
 
-    public void monterNiveau() {
-        this.niveau++;
-        this.pointsDeVie += 20;
-        this.attaque += 5;
+    public void setNiveau(int niveau) {
+        this.niveau = niveau;
     }
 }
