@@ -15,8 +15,8 @@ public class InventaireDAO {
 
     public InventaireDAO() {
         MongoClient client = MongoClients.create("mongodb://localhost:27017");
-        MongoDatabase database = client.getDatabase(""); // Mets ici le vrai nom
-        this.collection = database.getCollection("");
+        MongoDatabase database = client.getDatabase("Game"); // Mets ici le vrai nom
+        this.collection = database.getCollection("Inventaire");
     }
 
     public boolean ajouterItem(Item item) {
@@ -40,6 +40,11 @@ public class InventaireDAO {
         }
         return inventaire;
     }
+    public Item recupererItemParId(String itemId){
+        Item item = null;
+        return item;
+    }
+
 
     private Document toDocument(Item item) {
         return new Document()
