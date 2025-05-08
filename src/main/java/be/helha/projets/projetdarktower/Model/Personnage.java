@@ -42,6 +42,8 @@ public abstract class Personnage {
         return attaque;
     }
 
-    public abstract void attaquer(Personnage cible);
+    public abstract int attaquer(Personnage cible);
+    public void resetPointDeVie() {
+    }
 }
 

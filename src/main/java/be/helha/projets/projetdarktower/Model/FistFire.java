@@ -7,10 +7,16 @@ public class FistFire extends Personnage {
     }
 
     @Override
-    public void attaquer(Personnage cible){
+    public int attaquer(Personnage cible){
         int degats = 15;
         int vieRestante = cible.getPointsDeVie()-degats;
         System.out.println(nom + " inflige " + degats + " dégâts à " + cible.getNom());
         cible.setPointsDeVie(vieRestante);
+        return degats;
+    }
+
+    @Override
+    public void resetPointDeVie() {
+        this.setPointsDeVie(100);
     }
 }

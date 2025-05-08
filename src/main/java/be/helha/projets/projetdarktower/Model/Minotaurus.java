@@ -10,11 +10,12 @@ public class Minotaurus extends Personnage {
     }
 
     @Override
-    public void attaquer(Personnage cible) {
+    public int attaquer(Personnage cible) {
         int degats = 20;
         int vieRestante = cible.getPointsDeVie()-degats;
         System.out.println(nom + " inflige " + degats + " dégâts à " + cible.getNom());
         cible.setPointsDeVie(vieRestante);
+        return degats;
     }
     public void resetPointsDeVie() {
         this.setPointsDeVie(80 + (this.niveau * 20)); // Réinitialiser les PV en fonction du niveau
