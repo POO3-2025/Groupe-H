@@ -5,12 +5,14 @@ import java.util.List;
 
 public interface InventaireDAO {
 
-    boolean ajouterItem(Item item);
+    boolean ajouterItem(Item item, int idPersonnage);
 
-    List<Item> chargerInventaire();
+    List<Item> chargerInventaire(int idPersonnage);
 
     Item recupererItemParId(String itemId);
 
     boolean hasCoffreInInventory(String userId);
+
+    public void initialiserInventaireVide(int idPersonnage);
 
 }

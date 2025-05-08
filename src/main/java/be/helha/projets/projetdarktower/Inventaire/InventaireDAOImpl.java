@@ -11,6 +11,7 @@ import org.bson.Document;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Repository
@@ -43,38 +44,77 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
     // Méthode pour ajouter un item à l'inventaire
-    public boolean ajouterItem(Item item) {
-        // Vérifie si l'inventaire contient déjà un Coffre
+    public boolean ajouterItem(Item item, int idPersonnage) {
+        Document query = new Document("idPersonnage", idPersonnage);
+        Document inventaireDoc = collection.find(query).first();
+
+        if (inventaireDoc == null) {
+            System.out.println("Aucun inventaire trouvé pour ce personnage.");
+            return false;
+        }
+
+        List<Object> items = (List<Object>) inventaireDoc.get("items");
+
+        // Vérifie qu’il n’y ait pas déjà un coffre
         if (item instanceof Coffre) {
-            for (Item i : emplacements) {
-                if (i instanceof Coffre) {
-                    System.out.println("Un seul coffre est autorisé !");
-                    return false;
+            for (Object obj : items) {
+                if (obj instanceof Document) {
+                    Document doc = (Document) obj;
+                    if ("Coffre".equals(doc.getString("type"))) {
+                        System.out.println("Un seul coffre est autorisé !");
+                        return false;
+                    }
                 }
             }
         }
 
-        if (emplacements.size() < TAILLE_MAX) {
-            emplacements.add(item);
-            collection.insertOne(toDocument(item));
-            return true;
+        // Recherche du premier slot vide (null)
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i) == null) {
+                items.set(i, toDocument(item)); // Insertion de l’item
+                // Mise à jour dans MongoDB
+                Document update = new Document("$set", new Document("items", items));
+                collection.updateOne(query, update);
+                return true;
+            }
         }
 
+        System.out.println("L'inventaire est plein !");
         return false;
     }
 
-    public List<Item> chargerInventaire() {
-        List<Item> inventaire = new ArrayList<>();
-        for (Document doc : collection.find()) {
-            String type = doc.getString("type");
-            String nom = doc.getString("nom");
 
-            Item item = ItemFactory.creerItem(nom);
-            item.setId(doc.getString("_id"));
-            inventaire.add(item);
+    public List<Item> chargerInventaire(int idPersonnage) {
+        List<Item> inventaire = new ArrayList<>();
+
+        // Création de la requête pour récupérer l'inventaire du personnage avec l'ID spécifié
+        Document query = new Document("idPersonnage", idPersonnage);
+
+        // Recherche de l'inventaire dans MongoDB en utilisant l'idPersonnage
+        Document userInventory = collection.find(query).first();
+
+        // Vérifie si l'inventaire existe
+        if (userInventory != null) {
+            // Récupère les items depuis l'inventaire
+            List<Document> items = (List<Document>) userInventory.get("slots");
+
+            // Pour chaque item, on crée l'objet Item correspondant et on l'ajoute à la liste
+            for (Document itemDoc : items) {
+                if (itemDoc != null) {
+                    String type = itemDoc.getString("type");
+                    String nom = itemDoc.getString("nom");
+
+                    // Crée l'item à partir de son nom
+                    Item item = ItemFactory.creerItem(nom);
+                    item.setId(itemDoc.getString("_id")); // Associe l'ID de l'item
+                    inventaire.add(item); // Ajoute l'item à l'inventaire
+                }
+            }
         }
+
         return inventaire;
     }
+
 
 
     public Item recupererItemParId(String itemId) {
@@ -106,6 +146,27 @@ public class InventaireDAOImpl implements InventaireDAO {
         }
         return "Cet objet ne peut pas être utilisé.";
     }
+
+    public void initialiserInventaireVide(int idPersonnage) {
+        // Vérifie si l'inventaire existe déjà
+        Document existing = collection.find(new Document("idPersonnage", idPersonnage)).first();
+        if (existing != null) {
+            System.out.println("Inventaire déjà initialisé pour ce personnage.");
+            return;
+        }
+
+        // Crée une liste de 10 slots vides
+        List<Object> items = new ArrayList<>(Collections.nCopies(10, null));
+
+        Document inventaireDoc = new Document()
+                .append("idPersonnage", idPersonnage)
+                .append("items", items);
+
+        collection.insertOne(inventaireDoc);
+        System.out.println("Inventaire vide initialisé pour le personnage " + idPersonnage);
+    }
+
+
 
     // Convertit un item en document MongoDB pour l'insertion
     private Document toDocument(Item item) {
