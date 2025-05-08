@@ -11,4 +11,6 @@ public interface InventaireDAO {
 
     Item recupererItemParId(String itemId);
 
+    boolean hasCoffreInInventory(String userId);
+
 }

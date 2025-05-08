@@ -1,5 +1,7 @@
 package be.helha.projets.projetdarktower;
 
+import be.helha.projets.projetdarktower.Item.Item;
+import be.helha.projets.projetdarktower.Item.ItemFactory;
 import be.helha.projets.projetdarktower.Model.*;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
@@ -9,202 +11,200 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFrame;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.lang.Thread.sleep;
 
 public class LanternaCombat {
 
+    private static final int SCREEN_WIDTH = 100;
+    private static final int SCREEN_HEIGHT = 20;
+
     public static void main(String[] args) {
         try {
-            DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
-            terminalFactory.setInitialTerminalSize(new TerminalSize(100, 20));
-            SwingTerminalFrame terminal = terminalFactory.createSwingTerminal();
-            terminal.setVisible(true);
-            terminal.setResizable(false);
-            Screen screen = new TerminalScreen(terminal);
-            screen.startScreen();
-
-            // Utilisation d'un objet mutable pour gérer l'étage
-            final Etage etageObj = new Etage(1); // Création de l'objet "Etage" qui sera mutable
-            final Tour tourObj = new Tour(1);
-            MultiWindowTextGUI gui = new MultiWindowTextGUI(screen);
-            BasicWindow window = new BasicWindow("Etage " + etageObj.getEtage());
-
-            // Panel principal avec centrage
-            Panel mainPanel = new Panel(new LinearLayout(Direction.HORIZONTAL));
-
-            // Panel de contenu centré pour les PV, Tour, Etage
-            Panel contentPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-
-            // Panel pour l'historique
-            Panel historyPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-
-            // Création du personnage joueur
-            Personnage joueur = new FistFire("Joueur");
-
-            // Création du minotaure
-            Minotaurus minautor = new Minotaurus("Minotaure", etageObj.getEtage());
-
-            // Affichage des points de vie
-            Label NbrTour = new Label("Tour : " + tourObj.getTour());
-            Label joueurPV = new Label(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-            Label minautorPV = new Label(minautor.getNom() + " PV: " + minautor.getPointsDeVie());
-            Label etageLabel = new Label("Etage : " + etageObj.getEtage());
-
-            contentPanel.addComponent(NbrTour);
-            contentPanel.addComponent(joueurPV);
-            contentPanel.addComponent(minautorPV);
-            contentPanel.addComponent(etageLabel);
-
-            // Historique des actions
-            Label historiqueLabel = new Label("Historique:");
-            historyPanel.addComponent(historiqueLabel);
-            historyPanel.addComponent(new Label("Début du combat"));
-
-            // Boutons de quitter et attaquer
-            Button quitButton = new Button("Quitter", window::close);
-            Button attackButton = new Button("Attaquer", () -> {
-                // Attaque du joueur
-                int degats = joueur.attaquer(minautor);
-                NbrTour.setText("Tour : " + tourObj.getTour());
-                joueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-                minautorPV.setText(minautor.getNom() + " PV: " + minautor.getPointsDeVie());
-                int degatsMin = minautor.attaquer(joueur);
-                NbrTour.setText("Tour : " + tourObj.getTour());
-                joueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-                minautorPV.setText(minautor.getNom() + " PV: " + minautor.getPointsDeVie());
-
-                // Ajout à l'historique
-                historyPanel.addComponent(new Label("\nVous avez infligé " + degats + "dégats\n"));
-                historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMin + "dégats\n"));
-
-                // Incrémentation du tour
-                tourObj.incrementer();
-
-                if (joueur.getPointsDeVie() <= 0 || minautor.getPointsDeVie() <= 0) {
-                    String messageFin = (joueur.getPointsDeVie() <= 0)
-                            ? "Vous avez perdu contre " + minautor.getNom() + " !"
-                            : "Félicitations ! Vous avez vaincu l'étage N°" + etageObj.getEtage() + "\nVeuillez passer à l'étage suivant";
-
-                    // Panel de fin de combat
-                    Panel endPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-                    endPanel.addComponent(new Label(messageFin));
-                    if (joueur.getPointsDeVie() <= 0){
-                        Button RestartButton = new Button("Recommencez?", () -> {
-                            // Réinitialiser l'historique
-                            historyPanel.removeAllComponents();  // Vider l'historique actuel
-                            historyPanel.addComponent(new Label("Début du combat"));  // Ajouter un message de redémarrage
-
-                            etageObj.resetEtage();  // Réinitialiser l'étage
-                            minautor.setNiveau(etageObj.getEtage());  // Mise à jour du niveau du Minotaure
-                            minautor.resetPointsDeVie();  // Réinitialiser les PV du Minotaure
-                            joueur.resetPointDeVie();  // Réinitialiser les PV du joueur
-                            tourObj.resetTour();  // Réinitialiser le tour
-
-                            // Mise à jour de l'interface
-                            window.setTitle("Etage " + etageObj.getEtage());
-                            NbrTour.setText("Tour : " + tourObj.getTour());
-                            joueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-                            minautorPV.setText(minautor.getNom() + " PV: " + minautor.getPointsDeVie());
-
-                            // Mise à jour du panneau principal
-                            window.setComponent(mainPanel);
-                            gui.addWindowAndWait(window);
-                        });
-                        endPanel.addComponent(RestartButton);
-                    }
-                    else {
-                        Button nextButton = new Button("Suivant", () -> {
-                            if (etageObj.getEtage() < 20) {
-                                etageObj.incrementer(); // Incrémenter l'étage
-                                minautor.setNiveau(etageObj.getEtage());  // Mise à jour du niveau du Minotaure
-                                minautor.resetPointsDeVie(); // Réinitialiser les PV du Minotaure
-                                tourObj.resetTour();
-
-                                window.setTitle("Etage " + etageObj.getEtage());
-                                NbrTour.setText("Tour : " + tourObj.getTour());
-                                joueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-                                minautorPV.setText(minautor.getNom() + " PV: " + minautor.getPointsDeVie());
-
-                                window.setComponent(mainPanel);
-                                gui.addWindowAndWait(window);
-                            }
-                        });
-                        endPanel.addComponent(nextButton);
-                    };
-
-                    endPanel.addComponent(new Button("Arreter", window::close));
-
-                    Panel finalPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-                    finalPanel.addComponent(new EmptySpace(new TerminalSize(1, 1)));
-                    finalPanel.addComponent(endPanel, LinearLayout.createLayoutData(LinearLayout.Alignment.Center));
-                    finalPanel.addComponent(new EmptySpace(new TerminalSize(1, 1)));
-
-                    window.setComponent(finalPanel);
-                }
-
-                try {
-                    screen.refresh();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-
-            // Ajout des boutons et autres composants à la fenêtre
-            contentPanel.addComponent(attackButton);
-            contentPanel.addComponent(quitButton);
-
-            // Ajouter le panneau contentPanel et historyPanel au mainPanel (panneau principal)
-            mainPanel.addComponent(contentPanel, LinearLayout.createLayoutData(LinearLayout.Alignment.Center));
-            mainPanel.addComponent(historyPanel, LinearLayout.createLayoutData(LinearLayout.Alignment.End)); // à droite
-
-            // Mise à jour de la fenêtre avec les deux panneaux
-            window.setComponent(mainPanel);
-            gui.addWindow(window);
-            screen.refresh();
-            gui.addWindowAndWait(window);
-            screen.stopScreen();
+            startCombatScreen();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    // Classe pour encapsuler l'étage et le rendre mutable
-    static class Etage {
-        private int etage;
+    private static void startCombatScreen() throws IOException {
+        DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory()
+                .setInitialTerminalSize(new TerminalSize(SCREEN_WIDTH, SCREEN_HEIGHT));
+        SwingTerminalFrame terminal = terminalFactory.createSwingTerminal();
+        terminal.setVisible(true);
+        terminal.setResizable(false);
 
-        public Etage(int etage) {
-            this.etage = etage;
+        Screen screen = new TerminalScreen(terminal);
+        screen.startScreen();
+
+        MultiWindowTextGUI gui = new MultiWindowTextGUI(screen);
+        BasicWindow window = createCombatWindow(gui, screen);
+
+        gui.addWindowAndWait(window);
+        screen.stopScreen();
+    }
+
+    private static BasicWindow createCombatWindow(MultiWindowTextGUI gui, Screen screen) {
+        BasicWindow window = new BasicWindow("Combat - DarkTower");
+
+        Etage etage = new Etage(1);
+        Tour tour = new Tour(1);
+        Personnage joueur = new FistFire("Joueur");
+        Minotaurus minotaure = new Minotaurus("Minotaure", etage.getEtage());
+        // Création des objets pour l'inventaire du joueur
+        List<Item> stock = new ArrayList<>(ItemFactory.getAllItems().values());
+
+
+
+
+        Panel mainPanel = new Panel(new LinearLayout(Direction.HORIZONTAL));
+        Panel contentPanel = new Panel(new LinearLayout(Direction.VERTICAL));
+        Panel historyPanel = new Panel(new LinearLayout(Direction.VERTICAL));
+
+        Label lblTour = new Label("Tour : " + tour.getTour());
+        Label lblJoueurPV = new Label(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+        Label lblMinotaurePV = new Label(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+        Label lblEtage = new Label("Etage : " + etage.getEtage());
+
+        contentPanel.addComponent(lblTour);
+        contentPanel.addComponent(lblJoueurPV);
+        contentPanel.addComponent(lblMinotaurePV);
+        contentPanel.addComponent(lblEtage);
+
+        historyPanel.addComponent(new Label("Historique:"));
+        historyPanel.addComponent(new Label("Début du combat"));
+
+        Button btnAttaquer = new Button("Attaquer", () -> handleAttack(
+                joueur, minotaure, tour, etage,
+                lblTour, lblJoueurPV, lblMinotaurePV,
+                historyPanel, gui, screen, window, mainPanel));
+
+        Button btnQuitter = new Button("Quitter", window::close);
+
+        contentPanel.addComponent(btnAttaquer);
+        contentPanel.addComponent(btnQuitter);
+
+        mainPanel.addComponent(contentPanel, LinearLayout.createLayoutData(LinearLayout.Alignment.Center));
+        mainPanel.addComponent(historyPanel, LinearLayout.createLayoutData(LinearLayout.Alignment.End));
+
+        window.setComponent(mainPanel);
+        return window;
+    }
+
+    private static void handleAttack(
+            Personnage joueur, Minotaurus minotaure, Tour tour, Etage etage,
+            Label lblTour, Label lblJoueurPV, Label lblMinotaurePV,
+            Panel historyPanel, MultiWindowTextGUI gui, Screen screen,
+            BasicWindow window, Panel mainPanel) {
+
+        try { sleep(500); } catch (InterruptedException ignored) {}
+
+        int degatsJoueur = joueur.attaquer(minotaure);
+        lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+        historyPanel.addComponent(new Label("\nVous avez infligé " + degatsJoueur + " dégats"));
+        updateGui(gui);
+
+        try { sleep(300); } catch (InterruptedException ignored) {}
+
+        int degatsMinotaure = minotaure.attaquer(joueur);
+        lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+        historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
+
+        tour.incrementer();
+        lblTour.setText("Tour : " + tour.getTour());
+
+        try { sleep(100); } catch (InterruptedException ignored) {}
+
+        if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
+            showEndCombat(gui, joueur, minotaure, etage, tour,
+                    historyPanel, lblTour, lblJoueurPV, lblMinotaurePV,
+                    window, mainPanel);
         }
 
-        public int getEtage() {
-            return etage;
-        }
-
-        public void incrementer() {
-            this.etage++;
-        }
-        public void resetEtage(){
-            this.etage = 1;
+        try {
+            screen.refresh();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    // Classe pour encapsuler le tour et le rendre mutable
+    private static void showEndCombat(
+            MultiWindowTextGUI gui, Personnage joueur, Minotaurus minotaure,
+            Etage etage, Tour tour, Panel historyPanel,
+            Label lblTour, Label lblJoueurPV, Label lblMinotaurePV,
+            BasicWindow window, Panel mainPanel) {
+
+        String finCombatMsg = (joueur.getPointsDeVie() <= 0)
+                ? "Vous avez perdu contre " + minotaure.getNom() + " !"
+                : "Félicitations ! Vous avez vaincu l'étage N°" + etage.getEtage();
+
+        Panel endPanel = new Panel(new LinearLayout(Direction.VERTICAL));
+        endPanel.addComponent(new Label(finCombatMsg));
+
+        if (joueur.getPointsDeVie() <= 0) {
+            endPanel.addComponent(new Button("Recommencer", () -> {
+                restartCombat(joueur, minotaure, etage, tour, historyPanel, lblTour, lblJoueurPV, lblMinotaurePV);
+                window.setComponent(mainPanel);
+            }));
+        } else {
+            endPanel.addComponent(new Button("Suivant", () -> {
+                if (etage.getEtage() < 20) {
+                    etage.incrementer();
+                    minotaure.setNiveau(etage.getEtage());
+                    minotaure.resetPointsDeVie();
+                    tour.resetTour();
+                    lblTour.setText("Tour : " + tour.getTour());
+                    lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+                    window.setComponent(mainPanel);
+                }
+            }));
+        }
+
+        endPanel.addComponent(new Button("Quitter", window::close));
+        window.setComponent(endPanel);
+    }
+
+    private static void restartCombat(
+            Personnage joueur, Minotaurus minotaure, Etage etage, Tour tour,
+            Panel historyPanel, Label lblTour, Label lblJoueurPV, Label lblMinotaurePV) {
+
+        historyPanel.removeAllComponents();
+        historyPanel.addComponent(new Label("Début du combat"));
+
+        etage.resetEtage();
+        minotaure.setNiveau(etage.getEtage());
+        minotaure.resetPointsDeVie();
+        joueur.resetPointDeVie();
+        tour.resetTour();
+
+        lblTour.setText("Tour : " + tour.getTour());
+        lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+        lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+    }
+
+    private static void updateGui(MultiWindowTextGUI gui) {
+        try {
+            gui.updateScreen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    static class Etage {
+        private int etage;
+        public Etage(int etage) { this.etage = etage; }
+        public int getEtage() { return etage; }
+        public void incrementer() { this.etage++; }
+        public void resetEtage() { this.etage = 1; }
+    }
+
     static class Tour {
         private int tour;
-
-        public Tour(int tour) {
-            this.tour = tour;
-        }
-
-        public int getTour() {
-            return tour;
-        }
-
-        public void incrementer() {
-            this.tour++;
-        }
-
-        public void resetTour() {
-            this.tour = 1;
-        }
+        public Tour(int tour) { this.tour = tour; }
+        public int getTour() { return tour; }
+        public void incrementer() { this.tour++; }
+        public void resetTour() { this.tour = 1; }
     }
 }

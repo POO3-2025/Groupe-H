@@ -8,12 +8,12 @@ import be.helha.projets.projetdarktower.Item.Coffre;
 import be.helha.projets.projetdarktower.Model.Personnage;
 import com.mongodb.client.*;
 import org.bson.Document;
-import org.springframework.stereotype.Repository;  // Ajoutez l'annotation @Repository
+import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Repository  // Annotation pour indiquer que c'est un bean Spring
+@Repository
 public class InventaireDAOImpl implements InventaireDAO {
     private static final int TAILLE_MAX = 10;
     private final List<Item> emplacements = new ArrayList<>();
@@ -21,10 +21,28 @@ public class InventaireDAOImpl implements InventaireDAO {
 
     public InventaireDAOImpl() {
         MongoClient client = MongoClients.create("mongodb://localhost:27017");
-        MongoDatabase database = client.getDatabase("Game"); // Mets ici le vrai nom
+        MongoDatabase database = client.getDatabase("Game");
         this.collection = database.getCollection("Inventaire");
     }
 
+    // Vérifie si l'utilisateur a déjà un coffre dans son inventaire (MongoDB)
+    public boolean hasCoffreInInventory(String userId) {
+        Document query = new Document("userId", userId);
+        Document userInventory = collection.find(query).first();
+
+        if (userInventory != null) {
+            List<Document> items = (List<Document>) userInventory.get("items");
+            for (Document item : items) {
+                if ("Coffre".equals(item.getString("type"))) {
+                    return true; // L'utilisateur a un coffre
+                }
+            }
+        }
+        return false;
+    }
+
+
+    // Méthode pour ajouter un item à l'inventaire
     public boolean ajouterItem(Item item) {
         // Vérifie si l'inventaire contient déjà un Coffre
         if (item instanceof Coffre) {
@@ -45,7 +63,6 @@ public class InventaireDAOImpl implements InventaireDAO {
         return false;
     }
 
-
     public List<Item> chargerInventaire() {
         List<Item> inventaire = new ArrayList<>();
         for (Document doc : collection.find()) {
@@ -59,12 +76,11 @@ public class InventaireDAOImpl implements InventaireDAO {
         return inventaire;
     }
 
+
     public Item recupererItemParId(String itemId) {
         Document doc = collection.find(new Document("_id", itemId)).first();
         if (doc != null) {
-            String type = doc.getString("type");
             String nom = doc.getString("nom");
-
             Item item = ItemFactory.creerItem(nom);
             item.setId(doc.getString("_id"));
             return item;
@@ -72,19 +88,17 @@ public class InventaireDAOImpl implements InventaireDAO {
         return null;
     }
 
-    // Dans InventaireDAOImpl
+    // Méthode d'utilisation d'un item (Potion, Weapon, etc.)
     public String UseItem(Item item, Personnage utilisateur, Personnage cible) {
         if (item instanceof Weapon) {
-            // Si c'est une épée, l'attaque est effectuée sur la cible si elle est présente
             Weapon weapon = (Weapon) item;
             if (cible != null) {
-                int degats = weapon.getDegats(); // Dégâts infligés à la cible
+                int degats = weapon.getDegats();
                 return "L'utilisateur " + utilisateur.getNom() + " attaque la cible " + cible.getNom() + " avec l'épée " + weapon.getNom() + " infligeant " + degats + " dégâts.";
             } else {
                 return "Cible non spécifiée pour l'attaque.";
             }
         } else if (item instanceof Potion) {
-            // Si c'est une potion, on soigne l'utilisateur
             Potion potion = (Potion) item;
             int pointsDeVie = potion.getPointsDeVieRecuperes() + utilisateur.getPointsDeVie();
             utilisateur.setPointsDeVie(pointsDeVie);
@@ -93,7 +107,7 @@ public class InventaireDAOImpl implements InventaireDAO {
         return "Cet objet ne peut pas être utilisé.";
     }
 
-
+    // Convertit un item en document MongoDB pour l'insertion
     private Document toDocument(Item item) {
         return new Document()
                 .append("_id", item.getId())
