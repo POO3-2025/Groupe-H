@@ -170,9 +170,24 @@ public class InventaireDAOImpl implements InventaireDAO {
 
     // Convertit un item en document MongoDB pour l'insertion
     private Document toDocument(Item item) {
-        return new Document()
+        Document doc = new Document()
                 .append("_id", item.getId())
                 .append("nom", item.getNom())
                 .append("type", item.getType());
+
+        if (item instanceof Weapon) {
+            Weapon weapon = (Weapon) item;
+            doc.append("degats", weapon.getDegats());
+        } else if (item instanceof Potion) {
+            Potion potion = (Potion) item;
+            doc.append("pointsDeVieRecuperes", potion.getPointsDeVieRecuperes());
+        } else if (item instanceof Coffre) {
+            // Coffre vide avec 10 emplacements = liste de 10 null
+            List<Object> contenuVide = new ArrayList<>(Collections.nCopies(10, null));
+            doc.append("contenu", contenuVide);
+        }
+
+        return doc;
     }
+
 }

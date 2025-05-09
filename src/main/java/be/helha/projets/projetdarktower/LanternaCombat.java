@@ -101,21 +101,27 @@ public class LanternaCombat {
 
         // Sélectionner 3 items aléatoires en fonction des chances de drop
         List<Item> itemsChoisis = new ArrayList<>();
-        double totalChance = stock.stream().mapToDouble(Item::getChanceDeDrop).sum();
+        List<Item> stockAvecOccurrences = new ArrayList<>(); // Cette liste va contenir les objets en fonction de leur chance de drop
         Random random = new Random();
 
-        for (int i = 0; i < 3; i++) {
-            double tirage = random.nextDouble() * totalChance;
-            double cumulativeChance = 0.0;
-
-            for (Item item : stock) {
-                cumulativeChance += item.getChanceDeDrop();
-                if (tirage < cumulativeChance) {
-                    itemsChoisis.add(item);
-                    break;
-                }
+// Ajouter des objets à la liste en fonction de leur chance de drop
+        for (Item item : stock) {
+            int occurrences = (int) item.getChanceDeDrop();  // Nombre d'occurrences en fonction de la chance
+            for (int i = 0; i < occurrences; i++) {
+                stockAvecOccurrences.add(item); // Ajouter l'item 'occurrences' fois à la liste
             }
         }
+
+// Tirer 3 objets au hasard dans la liste "stockAvecOccurrences"
+        for (int i = 0; i < 3; i++) {
+            int index = random.nextInt(stockAvecOccurrences.size()); // Tirage aléatoire
+            Item itemChoisi = stockAvecOccurrences.get(index); // Sélectionner l'item
+
+            itemsChoisis.add(itemChoisi); // Ajouter l'item choisi à la liste des items choisis
+        }
+
+
+
 
         // Créer la fenêtre de sélection
         BasicWindow choixItemWindow = new BasicWindow("Choisissez un Item");
