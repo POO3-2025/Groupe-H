@@ -3,6 +3,8 @@ package be.helha.projets.projetdarktower;
 import be.helha.projets.projetdarktower.Inventaire.InventaireDAOImpl;
 import be.helha.projets.projetdarktower.Item.Item;
 import be.helha.projets.projetdarktower.Item.ItemFactory;
+import be.helha.projets.projetdarktower.Item.Potion;
+import be.helha.projets.projetdarktower.Item.Weapon;
 import be.helha.projets.projetdarktower.Model.*;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
@@ -102,8 +104,10 @@ public class LanternaCombat {
             MessageDialog.showMessageDialog(gui, "Erreur", "Personnage non trouvé.");
         }
     }
-    public static void afficherEtChoisirItem(MultiWindowTextGUI gui, BasicWindow parentWindow,
-                                             Personnage selectedPersonnage, Runnable onItemChosen) {
+    public static void afficherEtChoisirItem(
+            MultiWindowTextGUI gui, BasicWindow parentWindow,
+            Personnage selectedPersonnage, Runnable onItemChosen
+    ) {
         inventaireDAO.initialiserInventaireVide(userId);
         List<Item> stock = new ArrayList<>(ItemFactory.getAllItems().values());
         List<Item> itemsChoisis = new ArrayList<>();
@@ -127,14 +131,19 @@ public class LanternaCombat {
             String itemNom = item.getNom();
             Button itemButton = new Button(itemNom, () -> {
                 try {
-                    inventaireDAO.ajouterItem(item, userId);
-                    MessageDialog.showMessageDialog(gui, "Succès", "L'item " + itemNom + " a été ajouté.");
+                    boolean plein = inventaireDAO.ajouterItem(item, userId);
+                    if (plein) {
+                        MessageDialog.showMessageDialog(gui, "Succès", "L'item " + itemNom + " a été ajouté.");
+                    }
+                    else {
+                        MessageDialog.showMessageDialog(gui, "Raté", "L'inventaire est rempli");
+                    }
                 } catch (Exception e) {
                     MessageDialog.showMessageDialog(gui, "Erreur", "Ajout de l'item impossible.");
                 }
 
                 choixItemWindow.close();
-                onItemChosen.run(); // Appeler l'action passée
+                onItemChosen.run(); // Action passée (mise à jour + retour combat)
             });
 
             panel.addComponent(itemButton);
@@ -143,6 +152,7 @@ public class LanternaCombat {
         choixItemWindow.setComponent(panel);
         gui.addWindowAndWait(choixItemWindow);
     }
+
 
 
 
@@ -195,10 +205,14 @@ public class LanternaCombat {
                 joueur, minotaure, tour, etage,
                 lblTour, lblJoueurPV, lblMinotaurePV,lblEtage,
                 historyPanel, gui, screen, window, mainPanel));
+        Button btnItem = new Button("Utiser Item", () -> useItem(joueur, minotaure, tour, etage,
+                lblTour, lblJoueurPV, lblMinotaurePV,lblEtage,
+                historyPanel, gui, screen, window, mainPanel));
 
         Button btnQuitter = new Button("Quitter", window::close);
 
         contentPanel.addComponent(btnAttaquer);
+        contentPanel.addComponent(btnItem);
         contentPanel.addComponent(btnQuitter);
 
         mainPanel.addComponent(contentPanel, LinearLayout.createLayoutData(LinearLayout.Alignment.Center));
@@ -251,14 +265,72 @@ public class LanternaCombat {
             e.printStackTrace();
         }
     }
-    private static void useItem(){
+    private static void useItem(
+            Personnage joueur, Minotaurus minotaure, Tour tour, Etage etage,
+            Label lblTour, Label lblJoueurPV, Label lblMinotaurePV, Label lblEtage,
+            Panel historyPanel, MultiWindowTextGUI gui, Screen screen,
+            BasicWindow window, Panel mainPanel
+    ) {
+        BasicWindow itemWindow = new BasicWindow("Utiliser un objet");
+        Panel panel = new Panel(new LinearLayout(Direction.VERTICAL));
 
-    };
+        // Récupération de l'inventaire du joueur
+        int id = userId; // Assure-toi que ton objet Personnage a bien un getId()
+        List<Item> inventaire = inventaireDAO.chargerInventaire(userId);
+
+        if (inventaire.isEmpty()) {
+            MessageDialog.showMessageDialog(gui, "Inventaire vide", "Vous n'avez aucun objet à utiliser.");
+            return;
+        }
+
+        for (Item item : inventaire) {
+            String nomItem = item.getNom();
+
+            Button itemButton = new Button(nomItem, () -> {
+                // Utilisation de l'objet : effet sur joueur ou minotaure
+                String resultat;
+
+                if (item instanceof Weapon) {
+                    resultat = inventaireDAO.UseItem(item, joueur, minotaure);
+                } else if (item instanceof Potion) {
+                    resultat = inventaireDAO.UseItem(item, joueur, null);
+                } else {
+                    resultat = "Cet objet ne peut pas être utilisé.";
+                }
+
+                // Met à jour l'historique
+                historyPanel.addComponent(new Label(resultat));
+
+                // Met à jour les PV
+                lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+
+                // Supprime l'objet utilisé de l'inventaire (tu dois ajouter cette méthode dans ton DAO si pas faite)
+                // À implémenter si ce n'est pas déjà fait
+
+                // Refresh interface (optionnel)
+                try {
+                    gui.updateScreen();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // Ferme la fenêtre
+                itemWindow.close();
+            });
+
+            panel.addComponent(itemButton);
+        }
+
+        itemWindow.setComponent(panel);
+        gui.addWindowAndWait(itemWindow);
+    }
+
 
     private static void showEndCombat(
             MultiWindowTextGUI gui, Personnage joueur, Minotaurus minotaure,
             Etage etage, Tour tour, Panel historyPanel,
-            Label lblTour, Label lblJoueurPV, Label lblMinotaurePV,Label lblEtage,
+            Label lblTour, Label lblJoueurPV, Label lblMinotaurePV, Label lblEtage,
             BasicWindow window, Panel mainPanel) {
 
         String finCombatMsg = (joueur.getPointsDeVie() <= 0)
@@ -274,43 +346,52 @@ public class LanternaCombat {
                 window.setComponent(mainPanel);
             }));
         } else {
+            endPanel.addComponent(new Button("Suivant", () -> {
+                if (etage.getEtage() < 20) {
+                    // Préparation étage suivant
+                    etage.incrementer();
+                    lblEtage.setText("Etage : " + etage.getEtage());
+                    minotaure.setNiveau(etage.getEtage());
+                    minotaure.resetPointsDeVie();
+                    tour.resetTour();
+                    lblTour.setText("Tour : " + tour.getTour());
+                    lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+                    historyPanel.removeAllComponents();
+                    historyPanel.addComponent(new Label("Début du combat"));
+                    updateGui(gui);
 
-            Button btnSuite = new Button ("Suivant", () -> afficherEtChoisirItem(gui, window, joueur, () -> {
-                // Étape 2 : après le choix, proposer de continuer
-                Panel suitePanel = new Panel(new LinearLayout(Direction.VERTICAL));
-                suitePanel.addComponent(new Label("Souhaitez-vous passer à l'étage suivant ?"));
-
-                    if (etage.getEtage() < 20) {
-                        etage.incrementer();
+                    // Choix de l'item puis combat
+                    afficherEtChoisirItem(gui, window, joueur, () -> {
+                        // Mise à jour de l'état
                         lblEtage.setText("Etage : " + etage.getEtage());
                         minotaure.setNiveau(etage.getEtage());
                         minotaure.resetPointsDeVie();
+                        lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+
                         tour.resetTour();
                         lblTour.setText("Tour : " + tour.getTour());
-                        lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+
                         historyPanel.removeAllComponents();
                         historyPanel.addComponent(new Label("Début du combat"));
-                        updateGui(gui);
-                        window.setComponent(mainPanel);
-                    }
-                    else {
-                        MessageDialog.showMessageDialog(gui, "Fin", "Vous avez vaincu tous les étages !");
-                        window.close();
-                    }
 
-                suitePanel.addComponent(new Button("Suivant", () -> {
-                    BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), joueur);
-                    gui.addWindowAndWait(combatWindow);
-                }));
-                suitePanel.addComponent(new Button("Quitter", window::close));
-                window.setComponent(suitePanel);
+                        updateGui(gui);
+
+                        // Revenir sur le mainPanel
+                        window.setComponent(mainPanel);
+                    });
+
+
+                } else {
+                    MessageDialog.showMessageDialog(gui, "Fin", "Vous avez vaincu tous les étages !");
+                    window.close();
+                }
             }));
-            endPanel.addComponent(btnSuite);
         }
 
         endPanel.addComponent(new Button("Quitter", window::close));
         window.setComponent(endPanel);
     }
+
 
     private static void restartCombat(
             Personnage joueur, Minotaurus minotaure, Etage etage, Tour tour,
