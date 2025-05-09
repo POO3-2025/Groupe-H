@@ -83,7 +83,14 @@ public class LanternaCombat {
             String message = "Vous avez choisi " + selectedPersonnage.getNom() + " - Points de vie : " + selectedPersonnage.getPointsDeVie();
             MessageDialog.showMessageDialog(gui, "Personnage choisi", message);
 
-            Button BtnItem = new Button("suivant", () -> afficherEtChoisirItem(gui,currentWindow, selectedPersonnage));
+            Button BtnItem = new Button("suivant", () -> {
+                afficherEtChoisirItem(gui, currentWindow, selectedPersonnage, () -> {
+                    BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), selectedPersonnage);
+                    gui.addWindowAndWait(combatWindow);
+                });
+            });
+
+
             // Ajoute le bouton à l'interface
             Panel panel = new Panel(new GridLayout(1));
             panel.addComponent(new Label("Vous avez sélectionné " + selectedPersonnage.getNom()));
@@ -95,64 +102,49 @@ public class LanternaCombat {
             MessageDialog.showMessageDialog(gui, "Erreur", "Personnage non trouvé.");
         }
     }
-    public static void afficherEtChoisirItem(MultiWindowTextGUI gui, BasicWindow currentWindow, Personnage selectedPersonnage) {
+    public static void afficherEtChoisirItem(MultiWindowTextGUI gui, BasicWindow parentWindow,
+                                             Personnage selectedPersonnage, Runnable onItemChosen) {
         inventaireDAO.initialiserInventaireVide(userId);
         List<Item> stock = new ArrayList<>(ItemFactory.getAllItems().values());
-
-        // Sélectionner 3 items aléatoires en fonction des chances de drop
         List<Item> itemsChoisis = new ArrayList<>();
-        List<Item> stockAvecOccurrences = new ArrayList<>(); // Cette liste va contenir les objets en fonction de leur chance de drop
+        List<Item> stockAvecOccurrences = new ArrayList<>();
         Random random = new Random();
 
-// Ajouter des objets à la liste en fonction de leur chance de drop
         for (Item item : stock) {
-            int occurrences = (int) item.getChanceDeDrop();  // Nombre d'occurrences en fonction de la chance
-            for (int i = 0; i < occurrences; i++) {
-                stockAvecOccurrences.add(item); // Ajouter l'item 'occurrences' fois à la liste
-            }
+            int occurrences = (int) item.getChanceDeDrop();
+            for (int i = 0; i < occurrences; i++) stockAvecOccurrences.add(item);
         }
 
-// Tirer 3 objets au hasard dans la liste "stockAvecOccurrences"
         for (int i = 0; i < 3; i++) {
-            int index = random.nextInt(stockAvecOccurrences.size()); // Tirage aléatoire
-            Item itemChoisi = stockAvecOccurrences.get(index); // Sélectionner l'item
-
-            itemsChoisis.add(itemChoisi); // Ajouter l'item choisi à la liste des items choisis
+            int index = random.nextInt(stockAvecOccurrences.size());
+            itemsChoisis.add(stockAvecOccurrences.get(index));
         }
 
-
-
-
-        // Créer la fenêtre de sélection
         BasicWindow choixItemWindow = new BasicWindow("Choisissez un Item");
         Panel panel = new Panel(new LinearLayout(Direction.VERTICAL));
 
         for (Item item : itemsChoisis) {
             String itemNom = item.getNom();
-
             Button itemButton = new Button(itemNom, () -> {
                 try {
                     inventaireDAO.ajouterItem(item, userId);
-                    MessageDialog.showMessageDialog(gui, "Succès", "L'item " + itemNom + " a été ajouté à votre inventaire.");
+                    MessageDialog.showMessageDialog(gui, "Succès", "L'item " + itemNom + " a été ajouté.");
                 } catch (Exception e) {
-                    MessageDialog.showMessageDialog(gui, "Erreur", "Une erreur est survenue lors de l'ajout de l'item.");
+                    MessageDialog.showMessageDialog(gui, "Erreur", "Ajout de l'item impossible.");
                 }
 
-                // Fermer la fenêtre de choix d'item
                 choixItemWindow.close();
-                currentWindow.close(); // Fermer la sélection du personnage aussi
-
-                // Lancer le combat
-                BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), selectedPersonnage);
-                gui.addWindowAndWait(combatWindow); // attend que le combat se termine
+                onItemChosen.run(); // Appeler l'action passée
             });
 
             panel.addComponent(itemButton);
         }
 
         choixItemWindow.setComponent(panel);
-        gui.addWindowAndWait(choixItemWindow); // attend que l'utilisateur choisisse un item
+        gui.addWindowAndWait(choixItemWindow);
     }
+
+
 
 
 
@@ -231,6 +223,13 @@ public class LanternaCombat {
 
         try { sleep(300); } catch (InterruptedException ignored) {}
 
+        if (minotaure.getPointsDeVie() <= 0) {
+            showEndCombat(gui, joueur, minotaure, etage, tour,
+                    historyPanel, lblTour, lblJoueurPV, lblMinotaurePV,lblEtage,
+                    window, mainPanel);
+            return;
+        }
+
         int degatsMinotaure = minotaure.attaquer(joueur);
         lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
         historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
@@ -275,18 +274,38 @@ public class LanternaCombat {
                 window.setComponent(mainPanel);
             }));
         } else {
-            endPanel.addComponent(new Button("Suivant", () -> {
-                if (etage.getEtage() < 20) {
-                    etage.incrementer();
-                    lblEtage.setText("Etage : " + etage.getEtage());
-                    minotaure.setNiveau(etage.getEtage());
-                    minotaure.resetPointsDeVie();
-                    tour.resetTour();
-                    lblTour.setText("Tour : " + tour.getTour());
-                    lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
-                    window.setComponent(mainPanel);
-                }
+
+            Button btnSuite = new Button ("Suivant", () -> afficherEtChoisirItem(gui, window, joueur, () -> {
+                // Étape 2 : après le choix, proposer de continuer
+                Panel suitePanel = new Panel(new LinearLayout(Direction.VERTICAL));
+                suitePanel.addComponent(new Label("Souhaitez-vous passer à l'étage suivant ?"));
+
+                    if (etage.getEtage() < 20) {
+                        etage.incrementer();
+                        lblEtage.setText("Etage : " + etage.getEtage());
+                        minotaure.setNiveau(etage.getEtage());
+                        minotaure.resetPointsDeVie();
+                        tour.resetTour();
+                        lblTour.setText("Tour : " + tour.getTour());
+                        lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+                        historyPanel.removeAllComponents();
+                        historyPanel.addComponent(new Label("Début du combat"));
+                        updateGui(gui);
+                        window.setComponent(mainPanel);
+                    }
+                    else {
+                        MessageDialog.showMessageDialog(gui, "Fin", "Vous avez vaincu tous les étages !");
+                        window.close();
+                    }
+
+                suitePanel.addComponent(new Button("Suivant", () -> {
+                    BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), joueur);
+                    gui.addWindowAndWait(combatWindow);
+                }));
+                suitePanel.addComponent(new Button("Quitter", window::close));
+                window.setComponent(suitePanel);
             }));
+            endPanel.addComponent(btnSuite);
         }
 
         endPanel.addComponent(new Button("Quitter", window::close));
