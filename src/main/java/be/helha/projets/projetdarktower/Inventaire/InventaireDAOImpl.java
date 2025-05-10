@@ -94,26 +94,30 @@ public class InventaireDAOImpl implements InventaireDAO {
         Document userInventory = collection.find(query).first();
 
         // Vérifie si l'inventaire existe
-        if (userInventory != null) {
-            // Récupère les items depuis l'inventaire
-            List<Document> items = (List<Document>) userInventory.get("slots");
+        if (userInventory != null && userInventory.containsKey("items")) {
+            Object slotsObj = userInventory.get("items");
 
-            // Pour chaque item, on crée l'objet Item correspondant et on l'ajoute à la liste
-            for (Document itemDoc : items) {
-                if (itemDoc != null) {
-                    String type = itemDoc.getString("type");
-                    String nom = itemDoc.getString("nom");
+            if (slotsObj instanceof List<?>) {
+                List<?> rawList = (List<?>) slotsObj;
 
-                    // Crée l'item à partir de son nom
-                    Item item = ItemFactory.creerItem(nom);
-                    item.setId(itemDoc.getString("_id")); // Associe l'ID de l'item
-                    inventaire.add(item); // Ajoute l'item à l'inventaire
+                for (Object obj : rawList) {
+                    if (obj instanceof Document) {
+                        Document itemDoc = (Document) obj;
+                        String nom = itemDoc.getString("nom");
+
+                        if (nom != null) {
+                            Item item = ItemFactory.creerItem(nom);
+                            item.setId(itemDoc.getString("_id")); // Associe l'ID de l'item
+                            inventaire.add(item); // Ajoute l'item à l'inventaire
+                        }
+                    }
                 }
             }
         }
 
         return inventaire;
     }
+
 
 
 
@@ -134,6 +138,8 @@ public class InventaireDAOImpl implements InventaireDAO {
             Weapon weapon = (Weapon) item;
             if (cible != null) {
                 int degats = weapon.getDegats();
+                int vieRestante = cible.getPointsDeVie() - degats;
+                cible.setPointsDeVie(vieRestante);
                 return "L'utilisateur " + utilisateur.getNom() + " attaque la cible " + cible.getNom() + " avec l'épée " + weapon.getNom() + " infligeant " + degats + " dégâts.";
             } else {
                 return "Cible non spécifiée pour l'attaque.";

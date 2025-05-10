@@ -18,5 +18,14 @@ public class TWood extends Personnage {
     public void resetPointDeVie() {
         this.setPointsDeVie(90);
     }
+    @Override
+    public void setPointsDeVie(int pointsDeVie) {
+        if (pointsDeVie > 90){
+            super.setPointsDeVie(90);
+        }
+        else {
+            super.setPointsDeVie(pointsDeVie);
+        }
+    }
 }
 

@@ -19,4 +19,14 @@ public class FistFire extends Personnage {
     public void resetPointDeVie() {
         this.setPointsDeVie(100);
     }
+
+    @Override
+    public void setPointsDeVie(int pointsDeVie) {
+        if (pointsDeVie > 100){
+            super.setPointsDeVie(100);
+        }
+        else {
+            super.setPointsDeVie(pointsDeVie);
+        }
+    }
 }

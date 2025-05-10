@@ -5,6 +5,7 @@ import be.helha.projets.projetdarktower.Item.Item;
 import be.helha.projets.projetdarktower.Item.ItemFactory;
 import be.helha.projets.projetdarktower.Item.Potion;
 import be.helha.projets.projetdarktower.Item.Weapon;
+import be.helha.projets.projetdarktower.Item.Coffre;
 import be.helha.projets.projetdarktower.Model.*;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
@@ -287,37 +288,112 @@ public class LanternaCombat {
             String nomItem = item.getNom();
 
             Button itemButton = new Button(nomItem, () -> {
-                // Utilisation de l'objet : effet sur joueur ou minotaure
-                String resultat;
+                // Déclaration unique ici
+                String resultat = "";
 
                 if (item instanceof Weapon) {
                     resultat = inventaireDAO.UseItem(item, joueur, minotaure);
                 } else if (item instanceof Potion) {
                     resultat = inventaireDAO.UseItem(item, joueur, null);
+                } else if (item instanceof Coffre) {
+                    Coffre coffre = (Coffre) item;
+
+                    if (coffre.estVide()) {
+                        MessageDialog.showMessageDialog(gui, "Coffre vide", "Ce coffre ne contient aucun objet.");
+                    } else {
+                        BasicWindow coffreWindow = new BasicWindow("Contenu du coffre : " + coffre.getNom());
+                        Panel coffrePanel = new Panel(new LinearLayout(Direction.VERTICAL));
+
+                        for (Item itemDansCoffre : coffre.getContenu()) {
+                            String nomItemCoffre = itemDansCoffre.getNom();
+
+                            Button btnItemCoffre = new Button(nomItemCoffre, () -> {
+                                String resultatCoffre = "";
+
+                                if (itemDansCoffre instanceof Weapon) {
+                                    resultatCoffre = inventaireDAO.UseItem(itemDansCoffre, joueur, minotaure);
+                                } else if (itemDansCoffre instanceof Potion) {
+                                    resultatCoffre = inventaireDAO.UseItem(itemDansCoffre, joueur, null);
+                                } else {
+                                    resultatCoffre = "Cet objet ne peut pas être utilisé.";
+                                }
+
+                                historyPanel.addComponent(new Label("\n" + resultatCoffre));
+                                lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                                lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+
+                                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
+
+                                if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
+                                    showEndCombat(gui, joueur, minotaure, etage, tour,
+                                            historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
+                                            window, mainPanel);
+                                    return;
+                                }
+
+                                int degatsMinotaure = minotaure.attaquer(joueur);
+                                lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                                historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
+                                tour.incrementer();
+                                lblTour.setText("Tour : " + tour.getTour());
+
+                                try { screen.refresh(); } catch (IOException e) { e.printStackTrace(); }
+
+                                coffreWindow.close();
+                            });
+
+                            coffrePanel.addComponent(btnItemCoffre);
+                        }
+
+                        coffreWindow.setComponent(coffrePanel);
+                        gui.addWindowAndWait(coffreWindow);
+                    }
+
+                    return; // Empêche l'exécution du reste du code
                 } else {
                     resultat = "Cet objet ne peut pas être utilisé.";
                 }
 
-                // Met à jour l'historique
-                historyPanel.addComponent(new Label(resultat));
-
-                // Met à jour les PV
+                // Code commun après les utilisations classiques
+                historyPanel.addComponent(new Label("\n" + resultat));
                 lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
                 lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
+                updateGui(gui);
 
-                // Supprime l'objet utilisé de l'inventaire (tu dois ajouter cette méthode dans ton DAO si pas faite)
-                // À implémenter si ce n'est pas déjà fait
+                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
 
-                // Refresh interface (optionnel)
-                try {
-                    gui.updateScreen();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
+                    showEndCombat(gui, joueur, minotaure, etage, tour,
+                            historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
+                            window, mainPanel);
+                    return;
                 }
 
-                // Ferme la fenêtre
+                int degatsMinotaure = minotaure.attaquer(joueur);
+                lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
+                tour.incrementer();
+                lblTour.setText("Tour : " + tour.getTour());
+
+                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
+
+                if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
+                    showEndCombat(gui, joueur, minotaure, etage, tour,
+                            historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
+                            window, mainPanel);
+                }
+
+                try {
+                    screen.refresh();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
                 itemWindow.close();
             });
+
+
+
 
             panel.addComponent(itemButton);
         }

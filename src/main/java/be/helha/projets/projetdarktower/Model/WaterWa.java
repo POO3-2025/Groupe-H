@@ -18,4 +18,13 @@ public class WaterWa extends Personnage {
     public void resetPointDeVie() {
         this.setPointsDeVie(120);
     }
+    @Override
+    public void setPointsDeVie(int pointsDeVie) {
+        if (pointsDeVie > 120){
+            super.setPointsDeVie(120);
+        }
+        else {
+            super.setPointsDeVie(pointsDeVie);
+        }
+    }
 }
