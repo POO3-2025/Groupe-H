@@ -326,7 +326,7 @@ public class LanternaCombat {
 
 
                                 if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
-                                    itemWindow.close(); // ou coffreWindow.close(); selon le contexte
+                                    itemWindow.close();
                                     showEndCombat(gui, joueur, minotaure, etage, tour,
                                             historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                                             window, mainPanel);
@@ -367,7 +367,7 @@ public class LanternaCombat {
 
 
                 if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
-
+                    itemWindow.close();
                     showEndCombat(gui, joueur, minotaure, etage, tour,
                             historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                             window, mainPanel);
