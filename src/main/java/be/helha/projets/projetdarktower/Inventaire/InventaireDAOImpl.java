@@ -16,7 +16,6 @@ import java.util.List;
 
 @Repository
 public class InventaireDAOImpl implements InventaireDAO {
-    private static final int TAILLE_MAX = 10;
     private final List<Item> emplacements = new ArrayList<>();
     private final MongoCollection<Document> collection;
 
@@ -131,6 +130,68 @@ public class InventaireDAOImpl implements InventaireDAO {
         }
         return null;
     }
+    public String DeleteItem(String itemId) {
+        // On parcourt chaque inventaire pour chercher l'item
+        FindIterable<Document> allInventories = collection.find();
+
+        for (Document inventory : allInventories) {
+            List<Object> items = (List<Object>) inventory.get("items");
+
+            for (int i = 0; i < items.size(); i++) {
+                Object obj = items.get(i);
+                if (obj instanceof Document) {
+                    Document itemDoc = (Document) obj;
+                    String id = itemDoc.getString("_id");
+
+                    if (itemId.equals(id)) {
+                        // Remplace l'item par null
+                        items.set(i, null);
+
+                        // Met à jour l'inventaire dans MongoDB
+                        Document filter = new Document("_id", inventory.getObjectId("_id"));
+                        Document update = new Document("$set", new Document("items", items));
+                        collection.updateOne(filter, update);
+
+                        return "Item avec l'ID " + itemId + " supprimé avec succès.";
+                    }
+                }
+            }
+        }
+
+        return "Aucun item trouvé avec l'ID " + itemId + ".";
+    }
+
+    //MAJ LA DB APRES CHAQUE UTILISATION
+    private void updateUsageInMongo(String itemId, int newUsage) {
+        // Parcourt chaque inventaire
+        FindIterable<Document> allInventories = collection.find();
+
+        for (Document inventory : allInventories) {
+            List<Document> items = (List<Document>) inventory.get("items");
+
+            for (int i = 0; i < items.size(); i++) {
+                Document itemDoc = items.get(i);
+                String id = itemDoc.getString("_id");
+
+                // Si l'ID de l'item correspond
+                if (itemId.equals(id)) {
+                    // Mise à jour du "Usage_Time"
+                    itemDoc.put("Usage_Time", newUsage);
+                    items.set(i, itemDoc); // Remplace l'item modifié dans la liste
+
+                    // Mise à jour du document dans MongoDB
+                    Document filter = new Document("_id", inventory.getObjectId("_id"));
+                    Document update = new Document("$set", new Document("items", items));
+
+                    // Effectuer la mise à jour sur MongoDB
+                    collection.updateOne(filter, update);
+                    return; // Sortir dès que la mise à jour a eu lieu
+                }
+            }
+        }
+    }
+
+
 
     // Méthode d'utilisation d'un item (Potion, Weapon, etc.)
     public String UseItem(Item item, Personnage utilisateur, Personnage cible) {
@@ -140,6 +201,19 @@ public class InventaireDAOImpl implements InventaireDAO {
                 int degats = weapon.getDegats();
                 int vieRestante = cible.getPointsDeVie() - degats;
                 cible.setPointsDeVie(vieRestante);
+
+                // Gérer la durabilité
+                int durabilite = weapon.getUsages() - 1;
+                weapon.setUsages(durabilite);
+
+                // MAJ dans MongoDB
+                updateUsageInMongo(item.getId(), weapon.getUsages());
+
+                // Si l'arme n'a plus d'utilisations, on la supprime
+                if (weapon.getUsages() == 0) {
+                    DeleteItem(weapon.getId());
+                }
+
                 return "L'utilisateur " + utilisateur.getNom() + " attaque la cible " + cible.getNom() + " avec l'épée " + weapon.getNom() + " infligeant " + degats + " dégâts.";
             } else {
                 return "Cible non spécifiée pour l'attaque.";
@@ -148,10 +222,23 @@ public class InventaireDAOImpl implements InventaireDAO {
             Potion potion = (Potion) item;
             int pointsDeVie = potion.getPointsDeVieRecuperes() + utilisateur.getPointsDeVie();
             utilisateur.setPointsDeVie(pointsDeVie);
+
+            // MAJ usage et suppression
+            int usagesRestants = potion.getUsages() - 1;
+            if (usagesRestants <= 0) {
+                DeleteItem(potion.getId());
+            } else {
+                potion.setUsages(usagesRestants);
+                updateUsageInMongo(item.getId(), usagesRestants);
+            }
+
             return "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() + " et récupère " + potion.getPointsDeVieRecuperes() + " points de vie.";
         }
+
         return "Cet objet ne peut pas être utilisé.";
     }
+
+
 
     public void initialiserInventaireVide(int idPersonnage) {
         // Vérifie si l'inventaire existe déjà
@@ -184,9 +271,11 @@ public class InventaireDAOImpl implements InventaireDAO {
         if (item instanceof Weapon) {
             Weapon weapon = (Weapon) item;
             doc.append("degats", weapon.getDegats());
+            doc.append("Usage_Time",weapon.getUsages());
         } else if (item instanceof Potion) {
             Potion potion = (Potion) item;
             doc.append("pointsDeVieRecuperes", potion.getPointsDeVieRecuperes());
+            doc.append("Usage_Time",potion.getUsages());
         } else if (item instanceof Coffre) {
             // Coffre vide avec 10 emplacements = liste de 10 null
             List<Object> contenuVide = new ArrayList<>(Collections.nCopies(10, null));

@@ -84,8 +84,8 @@ public class LanternaCombat {
         Personnage selectedPersonnage = createCharacter(characterId);
 
         if (selectedPersonnage != null) {
-            String message = "Vous avez choisi " + selectedPersonnage.getNom() + " - Points de vie : " + selectedPersonnage.getPointsDeVie();
-            MessageDialog.showMessageDialog(gui, "Personnage choisi", message);
+            String message = "Vous avez choisi " + selectedPersonnage.getNom() + "\n- Points de vie : "
+                    + selectedPersonnage.getPointsDeVie() + "\n- Point D'Attaque : " + selectedPersonnage.getAttaque();
 
             Button BtnItem = new Button("suivant", () -> {
                 currentWindow.close();
@@ -100,9 +100,14 @@ public class LanternaCombat {
 
             // Ajoute le bouton à l'interface
             Panel panel = new Panel(new GridLayout(1));
-            panel.addComponent(new Label("Vous avez sélectionné " + selectedPersonnage.getNom()));
+            panel.addComponent(new Label(message));
+            panel.addComponent(new EmptySpace());
             panel.addComponent(BtnItem);
-            panel.addComponent(new Button("Retour", currentWindow::close)); // Pour revenir en arrière
+            panel.addComponent(new Button("Retour", () -> {
+                currentWindow.close(); // Ferme la fenêtre actuelle
+                showCharacterSelection(gui); // Affiche la fenêtre de sélection à nouveau
+            }));
+            // Pour revenir en arrière
 
             currentWindow.setComponent(panel);
         } else {
@@ -110,6 +115,7 @@ public class LanternaCombat {
         }
     }
 
+    //METHODE POUR LES RECOMPENSES D IETM
     public static void afficherEtChoisirItem(
             MultiWindowTextGUI gui, BasicWindow parentWindow,
             Personnage selectedPersonnage, Runnable onItemChosen
@@ -165,6 +171,7 @@ public class LanternaCombat {
 
 // PARTIE COMBAT
 
+    //METHODE QUI PERMET LA FENETRE DE COMBAT
     private static BasicWindow createCombatWindow(MultiWindowTextGUI gui, Screen screen, Personnage joueur) {
         BasicWindow window = new BasicWindow("Combat - DarkTower");
         window.setHints(List.of(Window.Hint.CENTERED));
@@ -211,20 +218,21 @@ public class LanternaCombat {
         return window;
     }
 
+    //METHODE STATIQUE POUR GERER L ATTAQUE
     private static void handleAttack(
             Personnage joueur, Minotaurus minotaure, Tour tour, Etage etage,
             Label lblTour, Label lblJoueurPV, Label lblMinotaurePV,Label lblEtage,
             Panel historyPanel, MultiWindowTextGUI gui, Screen screen,
             BasicWindow window, Panel mainPanel) {
 
-        try { sleep(500); } catch (InterruptedException ignored) {}
+
 
         int degatsJoueur = joueur.attaquer(minotaure);
         lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
         historyPanel.addComponent(new Label("\nVous avez infligé " + degatsJoueur + " dégats"));
         updateGui(gui);
 
-        try { sleep(300); } catch (InterruptedException ignored) {}
+
 
         if (minotaure.getPointsDeVie() <= 0) {
             showEndCombat(gui, joueur, minotaure, etage, tour,
@@ -232,6 +240,7 @@ public class LanternaCombat {
                     window, mainPanel);
             return;
         }
+        try { Thread.sleep(300); } catch (InterruptedException ignored) {}
 
         int degatsMinotaure = minotaure.attaquer(joueur);
         lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
@@ -240,7 +249,7 @@ public class LanternaCombat {
         tour.incrementer();
         lblTour.setText("Tour : " + tour.getTour());
 
-        try { sleep(100); } catch (InterruptedException ignored) {}
+
 
         if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
             showEndCombat(gui, joueur, minotaure, etage, tour,
@@ -254,6 +263,8 @@ public class LanternaCombat {
             e.printStackTrace();
         }
     }
+
+    //METHODE STATIQUE POUR GERER L UTILISATION ITEM
     private static void useItem(
             Personnage joueur, Minotaurus minotaure, Tour tour, Etage etage,
             Label lblTour, Label lblJoueurPV, Label lblMinotaurePV, Label lblEtage,
@@ -312,14 +323,17 @@ public class LanternaCombat {
                                 lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
                                 lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
 
-                                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
+
 
                                 if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
+                                    itemWindow.close(); // ou coffreWindow.close(); selon le contexte
                                     showEndCombat(gui, joueur, minotaure, etage, tour,
                                             historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                                             window, mainPanel);
                                     return;
                                 }
+
+                                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
 
                                 int degatsMinotaure = minotaure.attaquer(joueur);
                                 lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
@@ -350,24 +364,26 @@ public class LanternaCombat {
                 lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
                 updateGui(gui);
 
-                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
+
 
                 if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
+
                     showEndCombat(gui, joueur, minotaure, etage, tour,
                             historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                             window, mainPanel);
                     return;
                 }
 
+                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
                 int degatsMinotaure = minotaure.attaquer(joueur);
                 lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
                 historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
                 tour.incrementer();
                 lblTour.setText("Tour : " + tour.getTour());
 
-                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
 
                 if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
+                    itemWindow.close();
                     showEndCombat(gui, joueur, minotaure, etage, tour,
                             historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                             window, mainPanel);
@@ -393,6 +409,7 @@ public class LanternaCombat {
     }
 
 
+    //METHODE STATIQUE POUR AFFICHER LA FIN DU COMBAT
     private static void showEndCombat(
             MultiWindowTextGUI gui, Personnage joueur, Minotaurus minotaure,
             Etage etage, Tour tour, Panel historyPanel,
