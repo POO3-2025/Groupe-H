@@ -60,6 +60,7 @@ public class LanternaCombat {
 
     private static void showCharacterSelection(MultiWindowTextGUI gui) {
         BasicWindow window = new BasicWindow("Sélection du personnage");
+        window.setHints(List.of(Window.Hint.CENTERED));
 
         Panel panel = new Panel(new GridLayout(1));
 
@@ -87,9 +88,12 @@ public class LanternaCombat {
             MessageDialog.showMessageDialog(gui, "Personnage choisi", message);
 
             Button BtnItem = new Button("suivant", () -> {
+                currentWindow.close();
                 afficherEtChoisirItem(gui, currentWindow, selectedPersonnage, () -> {
                     BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), selectedPersonnage);
+                    combatWindow.setHints(List.of(Window.Hint.CENTERED));
                     gui.addWindowAndWait(combatWindow);
+
                 });
             });
 
@@ -105,6 +109,7 @@ public class LanternaCombat {
             MessageDialog.showMessageDialog(gui, "Erreur", "Personnage non trouvé.");
         }
     }
+
     public static void afficherEtChoisirItem(
             MultiWindowTextGUI gui, BasicWindow parentWindow,
             Personnage selectedPersonnage, Runnable onItemChosen
@@ -126,6 +131,7 @@ public class LanternaCombat {
         }
 
         BasicWindow choixItemWindow = new BasicWindow("Choisissez un Item");
+        choixItemWindow.setHints(List.of(Window.Hint.CENTERED));
         Panel panel = new Panel(new LinearLayout(Direction.VERTICAL));
 
         for (Item item : itemsChoisis) {
@@ -157,29 +163,11 @@ public class LanternaCombat {
 
 
 
-
-
-    private static Personnage createCharacter(String characterId) {
-        switch (characterId) {
-            case "fistfire":
-                return new FistFire("Fist Fire");
-            case "waterwa":
-                return new WaterWa("Water Wa");
-            case "jowind":
-                return new JoWind("Jo Wind");
-            case "twood":
-                return new TWood("TWood");
-            default:
-                return null; // Si le personnage n'est pas trouvé
-        }
-    }
-
-
-
 // PARTIE COMBAT
 
     private static BasicWindow createCombatWindow(MultiWindowTextGUI gui, Screen screen, Personnage joueur) {
         BasicWindow window = new BasicWindow("Combat - DarkTower");
+        window.setHints(List.of(Window.Hint.CENTERED));
 
         Etage etage = new Etage(1);
         Tour tour = new Tour(1);
@@ -273,6 +261,7 @@ public class LanternaCombat {
             BasicWindow window, Panel mainPanel
     ) {
         BasicWindow itemWindow = new BasicWindow("Utiliser un objet");
+        itemWindow.setHints(List.of(Window.Hint.CENTERED));
         Panel panel = new Panel(new LinearLayout(Direction.VERTICAL));
 
         // Récupération de l'inventaire du joueur
@@ -302,6 +291,7 @@ public class LanternaCombat {
                         MessageDialog.showMessageDialog(gui, "Coffre vide", "Ce coffre ne contient aucun objet.");
                     } else {
                         BasicWindow coffreWindow = new BasicWindow("Contenu du coffre : " + coffre.getNom());
+                        coffreWindow.setHints(List.of(Window.Hint.CENTERED));
                         Panel coffrePanel = new Panel(new LinearLayout(Direction.VERTICAL));
 
                         for (Item itemDansCoffre : coffre.getContenu()) {
@@ -468,7 +458,7 @@ public class LanternaCombat {
         window.setComponent(endPanel);
     }
 
-
+    //REDEMARRER LE COMBAT
     private static void restartCombat(
             Personnage joueur, Minotaurus minotaure, Etage etage, Tour tour,
             Panel historyPanel, Label lblTour, Label lblJoueurPV, Label lblMinotaurePV) {
@@ -495,6 +485,8 @@ public class LanternaCombat {
         }
     }
 
+    //CLASSE CREER EN STATIC
+
     static class Etage {
         private int etage;
         public Etage(int etage) { this.etage = etage; }
@@ -510,4 +502,19 @@ public class LanternaCombat {
         public void incrementer() { this.tour++; }
         public void resetTour() { this.tour = 1; }
     }
+    private static Personnage createCharacter(String characterId) {
+        switch (characterId) {
+            case "fistfire":
+                return new FistFire("Fist Fire");
+            case "waterwa":
+                return new WaterWa("Water Wa");
+            case "jowind":
+                return new JoWind("Jo Wind");
+            case "twood":
+                return new TWood("TWood");
+            default:
+                return null; // Si le personnage n'est pas trouvé
+        }
+    }
+
 }
