@@ -15,6 +15,7 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFrame;
 import be.helha.projets.projetdarktower.Service.CharacterService;
+import org.bson.codecs.pojo.TypeWithTypeParameters;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -84,19 +85,25 @@ public class LanternaCombat {
         Personnage selectedPersonnage = createCharacter(characterId);
 
         if (selectedPersonnage != null) {
+            // Créer le message de base avec les détails du personnage
             String message = "Vous avez choisi " + selectedPersonnage.getNom() + "\n- Points de vie : "
-                    + selectedPersonnage.getPointsDeVie() + "\n- Point D'Attaque : " + selectedPersonnage.getAttaque();
+                    + selectedPersonnage.getPointsDeVie() + "\n- Points D'Attaque : " + selectedPersonnage.getAttaque();
 
+            // Ajouter les passifs, s'il y en a
+            String passifsMessage = getPassifsMessage(selectedPersonnage);
+            if (!passifsMessage.isEmpty()) {
+                message += "\n- Passifs : \n" + passifsMessage;
+            }
+
+            // Créer le bouton "Suivant"
             Button BtnItem = new Button("suivant", () -> {
                 currentWindow.close();
                 afficherEtChoisirItem(gui, currentWindow, selectedPersonnage, () -> {
                     BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), selectedPersonnage);
                     combatWindow.setHints(List.of(Window.Hint.CENTERED));
                     gui.addWindowAndWait(combatWindow);
-
                 });
             });
-
 
             // Ajoute le bouton à l'interface
             Panel panel = new Panel(new GridLayout(1));
@@ -107,12 +114,35 @@ public class LanternaCombat {
                 currentWindow.close(); // Ferme la fenêtre actuelle
                 showCharacterSelection(gui); // Affiche la fenêtre de sélection à nouveau
             }));
-            // Pour revenir en arrière
 
             currentWindow.setComponent(panel);
         } else {
             MessageDialog.showMessageDialog(gui, "Erreur", "Personnage non trouvé.");
         }
+    }
+
+    // Méthode pour récupérer les passifs d'un personnage
+    private static String getPassifsMessage(Personnage personnage) {
+        StringBuilder passifsMessage = new StringBuilder();
+
+        // Exemple de passifs : si le personnage a des passifs, les ajouter à la chaîne
+        if (personnage instanceof FistFire) {
+            passifsMessage.append("- Chance de coup critique de 40%\n");
+        }
+        if (personnage instanceof JoWind) {
+            passifsMessage.append("- Passif: 30% de chance d'esquiver l'attaque\n");
+        }
+        if (personnage instanceof WaterWa) {
+            passifsMessage.append("- Passif: Diminution des dégats subis par 2\n");
+        }
+        if (personnage instanceof TWood){
+            passifsMessage.append("-Passif: Regénére 10 PV après chaque tour");
+        }
+
+        // Ajouter d'autres passifs selon le type de personnage
+        // Tu peux aussi avoir un attribut "passifs" dans la classe Personnage pour une gestion plus dynamique
+
+        return passifsMessage.toString();
     }
 
     //METHODE POUR LES RECOMPENSES D IETM
@@ -256,6 +286,9 @@ public class LanternaCombat {
                     historyPanel, lblTour, lblJoueurPV, lblMinotaurePV,lblEtage,
                     window, mainPanel);
         }
+        if (joueur instanceof TWood){
+            ((TWood) joueur).regenererPV();
+        }
 
         try {
             screen.refresh();
@@ -340,6 +373,9 @@ public class LanternaCombat {
                                 historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
                                 tour.incrementer();
                                 lblTour.setText("Tour : " + tour.getTour());
+                                if (joueur instanceof TWood){
+                                    ((TWood) joueur).regenererPV();
+                                }
 
                                 try { screen.refresh(); } catch (IOException e) { e.printStackTrace(); }
 
@@ -381,12 +417,14 @@ public class LanternaCombat {
                 tour.incrementer();
                 lblTour.setText("Tour : " + tour.getTour());
 
-
                 if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
                     itemWindow.close();
                     showEndCombat(gui, joueur, minotaure, etage, tour,
                             historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                             window, mainPanel);
+                }
+                if (joueur instanceof TWood){
+                    ((TWood) joueur).regenererPV();
                 }
 
                 try {

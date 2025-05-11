@@ -3,28 +3,31 @@ package be.helha.projets.projetdarktower.Model;
 public class WaterWa extends Personnage {
 
     public WaterWa(String id) {
-        super(id, "WaterWa", 120, 5);
+        super(id, "WaterWa", 180, 20); // 180 PV, 20 ATK
     }
 
     @Override
     public int attaquer(Personnage cible) {
-        int degats = 40;
-        int vieRestante = cible.getPointsDeVie()-degats;
+        int degats = 20;
+        int vieRestante = cible.getPointsDeVie() - degats;
         System.out.println(nom + " inflige " + degats + " dégâts à " + cible.getNom());
         cible.setPointsDeVie(vieRestante);
         return degats;
     }
+
     @Override
     public void resetPointDeVie() {
-        this.setPointsDeVie(120);
+        this.setPointsDeVie(180);
     }
+
     @Override
     public void setPointsDeVie(int pointsDeVie) {
-        if (pointsDeVie > 120){
-            super.setPointsDeVie(120);
+        if (pointsDeVie > 180){
+            super.setPointsDeVie(180);
         }
         else {
             super.setPointsDeVie(pointsDeVie);
         }
     }
 }
+

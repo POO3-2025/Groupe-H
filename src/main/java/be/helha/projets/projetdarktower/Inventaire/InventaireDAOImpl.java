@@ -7,7 +7,10 @@ import be.helha.projets.projetdarktower.Item.Potion;
 import be.helha.projets.projetdarktower.Item.Coffre;
 import be.helha.projets.projetdarktower.Model.Personnage;
 import com.mongodb.client.*;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateOptions;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -162,34 +165,22 @@ public class InventaireDAOImpl implements InventaireDAO {
     }
 
     //MAJ LA DB APRES CHAQUE UTILISATION
-    private void updateUsageInMongo(String itemId, int newUsage) {
-        // Parcourt chaque inventaire
-        FindIterable<Document> allInventories = collection.find();
+    private void decrementUsageInMongo(String itemId) {
+        Document filter = new Document("items._id", itemId);
 
-        for (Document inventory : allInventories) {
-            List<Document> items = (List<Document>) inventory.get("items");
+        Document update = new Document("$inc",
+                new Document("items.$[elem].Usage_Time", -1));
 
-            for (int i = 0; i < items.size(); i++) {
-                Document itemDoc = items.get(i);
-                String id = itemDoc.getString("_id");
+        List<Bson> arrayFilters = List.of(
+                Filters.eq("elem._id", itemId)
+        );
 
-                // Si l'ID de l'item correspond
-                if (itemId.equals(id)) {
-                    // Mise à jour du "Usage_Time"
-                    itemDoc.put("Usage_Time", newUsage);
-                    items.set(i, itemDoc); // Remplace l'item modifié dans la liste
+        UpdateOptions options = new UpdateOptions().arrayFilters(arrayFilters);
 
-                    // Mise à jour du document dans MongoDB
-                    Document filter = new Document("_id", inventory.getObjectId("_id"));
-                    Document update = new Document("$set", new Document("items", items));
-
-                    // Effectuer la mise à jour sur MongoDB
-                    collection.updateOne(filter, update);
-                    return; // Sortir dès que la mise à jour a eu lieu
-                }
-            }
-        }
+        collection.updateOne(filter, update, options);
     }
+
+
 
 
 
@@ -203,14 +194,14 @@ public class InventaireDAOImpl implements InventaireDAO {
                 cible.setPointsDeVie(vieRestante);
 
                 // Gérer la durabilité
-                int durabilite = weapon.getUsages() - 1;
-                weapon.setUsages(durabilite);
+
 
                 // MAJ dans MongoDB
-                updateUsageInMongo(item.getId(), weapon.getUsages());
+                decrementUsageInMongo(weapon.getId());
 
+                int durabilite = RecupererUsageItem(weapon.getId());
                 // Si l'arme n'a plus d'utilisations, on la supprime
-                if (weapon.getUsages() == 0) {
+                if (durabilite <= 0) {
                     DeleteItem(weapon.getId());
                 }
 
@@ -223,20 +214,32 @@ public class InventaireDAOImpl implements InventaireDAO {
             int pointsDeVie = potion.getPointsDeVieRecuperes() + utilisateur.getPointsDeVie();
             utilisateur.setPointsDeVie(pointsDeVie);
 
-            // MAJ usage et suppression
-            int usagesRestants = potion.getUsages() - 1;
-            if (usagesRestants <= 0) {
+            decrementUsageInMongo(item.getId());
+            int durabilite = RecupererUsageItem(potion.getId());
+            if (durabilite <= 0) {
                 DeleteItem(potion.getId());
-            } else {
-                potion.setUsages(usagesRestants);
-                updateUsageInMongo(item.getId(), usagesRestants);
             }
+                decrementUsageInMongo(item.getId());
 
             return "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() + " et récupère " + potion.getPointsDeVieRecuperes() + " points de vie.";
         }
 
         return "Cet objet ne peut pas être utilisé.";
     }
+
+    private int RecupererUsageItem(String itemId) {
+        Document inventory = collection.find(new Document("items._id", itemId)).first();
+        if (inventory != null) {
+            List<Document> items = (List<Document>) inventory.get("items");
+            for (Document item : items) {
+                if (itemId.equals(item.getString("_id"))) {
+                    return item.getInteger("Usage_Time", 0);
+                }
+            }
+        }
+        return 0; // Valeur par défaut si non trouvé
+    }
+
 
 
 

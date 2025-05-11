@@ -5,21 +5,42 @@ public class Minotaurus extends Personnage {
     private int niveau; // représente l'étage ou le niveau de puissance
 
     public Minotaurus(String id, int niveau) {
-        super(id, "Minotaurus", 80 + (niveau * 20), 20 + (niveau * 5)); // augmentation PV & attaque
+        super(id, "Minotaurus",
+                80 + (int)(Math.pow(niveau, 1.5) * 3.5),
+                20 + (int)(Math.pow(niveau, 1.3) * 2.5));
         this.niveau = niveau;
     }
 
+
     @Override
     public int attaquer(Personnage cible) {
-        int degats = 20;
-        int vieRestante = cible.getPointsDeVie()-degats;
+        int degats = this.attaque;
+
+        // Passif de WaterWa : réduit les dégâts reçus de moitié
+        if (cible instanceof WaterWa) {
+            degats /= 2;
+        }
+
+        // Passif de JoWind : 20% de chance d’esquiver complètement
+        if (cible instanceof JoWind) {
+            if (Math.random() < 0.30) {
+                System.out.println(cible.getNom() + " esquive l'attaque !");
+                degats = 0;
+            }
+        }
+
+        int vieRestante = cible.getPointsDeVie() - degats;
         System.out.println(nom + " inflige " + degats + " dégâts à " + cible.getNom());
-        cible.setPointsDeVie(vieRestante);
+        cible.setPointsDeVie(Math.max(vieRestante, 0));
+
         return degats;
     }
+
+
     public void resetPointsDeVie() {
-        this.setPointsDeVie(80 + (this.niveau * 20)); // Réinitialiser les PV en fonction du niveau
+        this.setPointsDeVie(80 + (int)(Math.pow(this.niveau, 1.5) * 3.5));
     }
+
 
     public int getNiveau() {
         return niveau;

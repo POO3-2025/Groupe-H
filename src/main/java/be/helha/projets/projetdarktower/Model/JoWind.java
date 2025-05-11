@@ -3,12 +3,12 @@ package be.helha.projets.projetdarktower.Model;
 public class JoWind extends Personnage {
 
     public JoWind(String id) {
-        super(id, "JoWind", 110, 15);
+        super(id, "JoWind", 110, 30);
     }
 
     @Override
     public int attaquer(Personnage cible) {
-        int degats = 50;
+        int degats = this.attaque;
         int vieRestante = cible.getPointsDeVie()-degats;
         System.out.println(nom + " inflige " + degats + " dégâts à " + cible.getNom());
         cible.setPointsDeVie(vieRestante);
