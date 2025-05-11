@@ -197,7 +197,7 @@ public class MainLanterna {
 
         InputStream inputStream;
         if (con.getResponseCode() >= 400) {
-            inputStream = con.getErrorStream(); // <-- IMPORTANT
+            inputStream = con.getErrorStream();
         } else {
             inputStream = con.getInputStream();
         }
