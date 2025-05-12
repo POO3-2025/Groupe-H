@@ -32,11 +32,21 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
-        if (userService.authenticate(loginRequest.getUsername(), loginRequest.getPassword())) {
-            String token = jwtUtil.generateToken(loginRequest.getUsername());
-            return ResponseEntity.ok("Bienvenue " + loginRequest.getUsername() + " !");
+        // Vérification si l'utilisateur existe
+        User user = userService.findByUsername(loginRequest.getUsername());
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Utilisateur inexistant");
         }
 
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Échec de la connexion");
+        // Vérification si le mot de passe est correct
+        if (!userService.isPasswordCorrect(user, loginRequest.getPassword())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Mot de passe incorrect");
+        }
+
+        // Génération du token JWT si tout est ok
+        String token = jwtUtil.generateToken(loginRequest.getUsername());
+        return ResponseEntity.ok("Bienvenue " + loginRequest.getUsername() + " !");
     }
 }

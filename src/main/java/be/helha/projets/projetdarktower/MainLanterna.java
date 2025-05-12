@@ -195,16 +195,21 @@ public class MainLanterna {
             }
         }
 
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(con.getInputStream(), "utf-8"))) {
+        InputStream inputStream;
+        if (con.getResponseCode() >= 400) {
+            inputStream = con.getErrorStream();
+        } else {
+            inputStream = con.getInputStream();
+        }
+
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, "utf-8"))) {
             StringBuilder response = new StringBuilder();
             String responseLine;
             while ((responseLine = br.readLine()) != null) {
                 response.append(responseLine.trim());
             }
             return response.toString();
-        } catch (IOException e) {
-            return "Erreur  : " + con.getResponseCode();
         }
     }
+
 }

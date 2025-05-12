@@ -3,10 +3,9 @@ package be.helha.projets.projetdarktower;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Scanner;
 import be.helha.projets.projetdarktower.Model.*;
 import be.helha.projets.projetdarktower.Service.CharacterService;
-
-import java.util.Scanner;
 
 public class MainMenuTerminal {
 
