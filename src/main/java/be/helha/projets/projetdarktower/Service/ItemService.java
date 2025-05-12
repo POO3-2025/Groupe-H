@@ -37,4 +37,16 @@ public class ItemService {
     public String utiliserItem(Item item, Personnage utilisateur) {
         return utiliserItem(item, utilisateur, null);
     }
+
+    public String supprimerItem(String itemId) {
+        return inventaireDAO.DeleteItem(itemId);
+    }
+
+    public void initialiserInventaire(int idPersonnage) {
+        inventaireDAO.initialiserInventaireVide(idPersonnage);
+    }
+
+    public boolean possedeCoffre(String userId) {
+        return inventaireDAO.hasCoffreInInventory(userId);
+    }
 }

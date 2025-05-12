@@ -1,8 +1,13 @@
 package be.helha.projets.projetdarktower.Item;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import jakarta.validation.constraints.NotBlank;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ItemSelectionRequest {
+    @NotBlank(message = "L'ID de l'item ne peut pas être vide")
     private String itemId;
-    private String cibleId;  // Cible optionnelle
+    private String cibleId;  // Ce champ est optionnel
 
     public String getItemId() {
         return itemId;

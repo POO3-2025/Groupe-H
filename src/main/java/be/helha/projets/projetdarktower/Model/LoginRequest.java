@@ -10,6 +10,7 @@ public class LoginRequest {
 
     // Constructeur avec paramètres
     public LoginRequest(String username, String password) {
+
         this.username = username;
         this.password = password;
     }

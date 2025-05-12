@@ -1,5 +1,7 @@
 package be.helha.projets.projetdarktower;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.gui2.*;
 import com.googlecode.lanterna.gui2.dialogs.MessageDialog;
@@ -16,6 +18,7 @@ public class MainLanterna {
 
     private static String jwtToken = null;
     private static boolean isLoggedIn = false;
+    private static int userId = 0;
 
     public static void main(String[] args) {
         try {
@@ -129,20 +132,37 @@ public class MainLanterna {
                 String json = "{\"username\":\"" + usernameBox.getText() + "\",\"password\":\"" + passwordBox.getText() + "\"}";
                 String response = sendRequest("http://localhost:8080/login", "POST", json, null);
 
-                if (response.contains("Bienvenue")) {
+                // 🔍 Affiche la réponse brute dans la console
+                System.out.println("Réponse brute : " + response);
+
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode node = mapper.readTree(response);
+
+                JsonNode tokenNode = node.get("token");
+                JsonNode usernameNode = node.get("username");
+                JsonNode userIdNode = node.get("userId");  // ← bonne clé
+
+                if (tokenNode != null && usernameNode != null && userIdNode != null) {
                     isLoggedIn = true;
-                    jwtToken = "dummy";
-                    MessageDialog.showMessageDialog(gui, "Succès", response);
+                    jwtToken = tokenNode.asText();
+
+                    MessageDialog.showMessageDialog(gui, "Succès",
+                            "Bienvenue " + usernameNode.asText() + " (ID: " + usernameNode.asText() + ")");
                     window.close();
                     showLoggedInMenu(gui);
+                }
+                else if (node.isTextual()) {
+                    MessageDialog.showMessageDialog(gui, "Erreur", node.asText());
                 } else {
-                    MessageDialog.showMessageDialog(gui, "Erreur", response);
+                    MessageDialog.showMessageDialog(gui, "Erreur", "Réponse inattendue : " + response);
                 }
 
             } catch (Exception e) {
                 MessageDialog.showMessageDialog(gui, "Erreur", e.getMessage());
             }
         }));
+
+
 
         panel.addComponent(new EmptySpace());
         panel.addComponent(new Button("Retour", window::close));

@@ -1,6 +1,8 @@
 package be.helha.projets.projetdarktower.Inventaire;
 
 import be.helha.projets.projetdarktower.Item.Item;
+import be.helha.projets.projetdarktower.Model.Personnage;
+
 import java.util.List;
 
 public interface InventaireDAO {
@@ -13,6 +15,9 @@ public interface InventaireDAO {
 
     boolean hasCoffreInInventory(String userId);
 
-    public void initialiserInventaireVide(int idPersonnage);
+    void initialiserInventaireVide(int idPersonnage);
 
+    String DeleteItem(String itemId);
+
+    String UseItem(Item item, Personnage utilisateur, Personnage cible);
 }
