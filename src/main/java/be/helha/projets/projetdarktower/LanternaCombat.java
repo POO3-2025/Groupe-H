@@ -467,16 +467,20 @@ public class LanternaCombat {
             Button itemButton = new Button(nomItem, () -> {
                 UseItemResult resultat = callUseItemAPI(joueur.getId(), item.getId(), minotaure.getId());
 
+                // Mise à jour des points de vie dans les objets
+                joueur.setPointsDeVie(resultat.pvUtilisateur());
+                minotaure.setPointsDeVie(resultat.pvCible());
+
                 // Mise à jour de l'historique avec le message retourné
                 historyPanel.addComponent(new Label("\n" + resultat.message()));
 
                 // Mise à jour des labels avec les PV mis à jour
-                lblJoueurPV.setText(joueur.getNom() + " PV: " + resultat.pvUtilisateur());
-                lblMinotaurePV.setText(minotaure.getNom() + " PV: " + resultat.pvCible());
+                lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
                 updateGui(gui);
 
                 // Vérification de la fin du combat
-                if (resultat.pvUtilisateur() <= 0 || resultat.pvCible() <= 0) {
+                if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
                     itemWindow.close();
                     showEndCombat(gui, joueur, minotaure, etage, tour,
                             historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
