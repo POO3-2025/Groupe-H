@@ -71,6 +71,8 @@ public class MainLanterna {
         BasicWindow window = new BasicWindow("Inscription");
         Panel panel = new Panel(new GridLayout(2));
 
+
+
         TextBox usernameBox = new TextBox();
         TextBox passwordBox = new TextBox().setMask('*');
 

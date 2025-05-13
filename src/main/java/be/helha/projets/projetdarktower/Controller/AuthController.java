@@ -36,12 +36,12 @@ public class AuthController {
             User user = userService.findByUsername(loginRequest.getUsername());
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Utilisateur inexistant");
+                        .body("Utilisateur inexistant ou Mot de passe incorrect ");
             }
 
             if (!userService.isPasswordCorrect(user, loginRequest.getPassword())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body("Mot de passe incorrect");
+                        .body("Utilisateur inexistant ou Mot de passe incorrect ");
             }
 
             String token = jwtUtil.generateToken(user.getUsername());
