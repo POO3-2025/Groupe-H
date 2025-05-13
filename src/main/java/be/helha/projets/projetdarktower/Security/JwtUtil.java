@@ -27,7 +27,7 @@ public class JwtUtil {
                 .getBody()
                 .getSubject();
     }
-    // Methode pour verifier la validité du token
+
     public boolean validateJwtToken(String token) {
         try {
             Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token);

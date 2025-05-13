@@ -26,6 +26,22 @@ public class CharacterService {
     }
 
     public Personnage selectCharacter(String characterId) {
+        if ("999".equals(characterId)) {
+            return personnages.get("minotaurus");
+        }
+        if ("1".equals(characterId) ) {
+            return personnages.get("fistfire");
+        }
+        if ("2".equals(characterId) ) {
+            return personnages.get("waterwa");
+        }
+        if ("3".equals(characterId) ) {
+            return personnages.get("jowind");
+        }
+        if ("4".equals(characterId) ) {
+            return personnages.get("twood");
+        }
         return personnages.get(characterId);
     }
+
 }

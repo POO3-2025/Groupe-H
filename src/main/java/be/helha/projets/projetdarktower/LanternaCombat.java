@@ -1,5 +1,6 @@
 package be.helha.projets.projetdarktower;
 
+import be.helha.projets.projetdarktower.DTO.UseItemResult;
 import be.helha.projets.projetdarktower.Inventaire.InventaireDAOImpl;
 import be.helha.projets.projetdarktower.Item.Item;
 import be.helha.projets.projetdarktower.Item.ItemFactory;
@@ -36,6 +37,7 @@ public class LanternaCombat {
     private static boolean isLoggedIn = false;
     private static int userId;
     public static Etage etageActuel = new Etage(1);
+    public static Tour tourActuel = new Tour(1);
 
     private static final CharacterService characterService = new CharacterService();
     public static InventaireDAOImpl inventaireDAO = new InventaireDAOImpl();
@@ -64,10 +66,7 @@ public class LanternaCombat {
     private static void showMainMenu(MultiWindowTextGUI gui, Screen screen) {
         BasicWindow window = new BasicWindow("Menu DarkTower");
         Panel panel = new Panel(new GridLayout(1));
-        String introText = "\nDarkTower, le jeu où franchir les étages d'une tour semble impossible. "
-                + "\nChaque défi devient plus complexe, rendant l'ascension inaccessibile. "
-                + "\nLa tour est un piège où l'échec est inévitable.";
-        panel.addComponent(new Label(introText));
+
         panel.addComponent(new Label("===== MENU DarkTower ====="));
         panel.addComponent(new Button("1. S'inscrire", () -> {
             window.close();
@@ -237,10 +236,10 @@ public class LanternaCombat {
         panel.addComponent(new Label("Choisissez un personnage :"));
 
         // Boutons pour chaque personnage
-        panel.addComponent(new Button("Fist Fire", () -> showCharacterDetails(gui, "fistfire", window)));
-        panel.addComponent(new Button("Water Wa", () -> showCharacterDetails(gui, "waterwa", window)));
-        panel.addComponent(new Button("Jo Wind", () -> showCharacterDetails(gui, "jowind", window)));
-        panel.addComponent(new Button("TWood", () -> showCharacterDetails(gui, "twood", window)));
+        panel.addComponent(new Button("Fist Fire", () -> showCharacterDetails(gui, "1", window)));
+        panel.addComponent(new Button("Water Wa", () -> showCharacterDetails(gui, "2", window)));
+        panel.addComponent(new Button("Jo Wind", () -> showCharacterDetails(gui, "3", window)));
+        panel.addComponent(new Button("TWood", () -> showCharacterDetails(gui, "4", window)));
 
         panel.addComponent(new EmptySpace());
         panel.addComponent(new Button("Retour", window::close));
@@ -267,7 +266,7 @@ public class LanternaCombat {
             // Créer le bouton "Suivant"
             Button BtnItem = new Button("suivant", () -> {
                 currentWindow.close();
-                envoyerChoixPersonnage(characterId, userId);
+                envoyerChoixPersonnage(characterId, userId,jwtToken);
                 afficherEtChoisirItem(gui, currentWindow, selectedPersonnage, () -> {
                     BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), selectedPersonnage);
                     combatWindow.setHints(List.of(Window.Hint.CENTERED));
@@ -354,15 +353,14 @@ public class LanternaCombat {
         window.setHints(List.of(Window.Hint.CENTERED));
 
 
-        Tour tour = new Tour(1);
-        Minotaurus minotaure = new Minotaurus("Minotaure", etageActuel.getEtage());
+        Minotaurus minotaure = new Minotaurus("999", etageActuel.getEtage());
         // Création des objets dans le stock
 
         Panel mainPanel = new Panel(new LinearLayout(Direction.HORIZONTAL));
         Panel contentPanel = new Panel(new LinearLayout(Direction.VERTICAL));
         Panel historyPanel = new Panel(new LinearLayout(Direction.VERTICAL));
         Label lblEtage = new Label("Etage : " + etageActuel.getEtage() +"\n");
-        Label lblTour = new Label("Tour : " + tour.getTour());
+        Label lblTour = new Label("Tour : " + tourActuel.getTour());
         Label lblJoueurPV = new Label(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
         Label lblMinotaurePV = new Label(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
 
@@ -375,10 +373,10 @@ public class LanternaCombat {
         historyPanel.addComponent(new Label("Début du combat"));
 
         Button btnAttaquer = new Button("Attaquer", () -> handleAttack(
-                joueur, minotaure, tour, etageActuel,
+                joueur, minotaure, tourActuel, etageActuel,
                 lblTour, lblJoueurPV, lblMinotaurePV,lblEtage,
                 historyPanel, gui, screen, window, mainPanel));
-        Button btnItem = new Button("Utiser Item", () -> useItem(joueur, minotaure, tour, etageActuel,
+        Button btnItem = new Button("Utiser Item", () -> useItem(joueur, minotaure, tourActuel, etageActuel,
                 lblTour, lblJoueurPV, lblMinotaurePV,lblEtage,
                 historyPanel, gui, screen, window, mainPanel));
 
@@ -456,7 +454,6 @@ public class LanternaCombat {
         Panel panel = new Panel(new LinearLayout(Direction.VERTICAL));
 
         // Récupération de l'inventaire du joueur
-        int id = userId; // Assure-toi que ton objet Personnage a bien un getId()
         List<Item> inventaire = inventaireDAO.chargerInventaire(userId);
 
         if (inventaire.isEmpty()) {
@@ -468,87 +465,21 @@ public class LanternaCombat {
             String nomItem = item.getNom();
 
             Button itemButton = new Button(nomItem, () -> {
-                // Déclaration unique ici
-                String resultat = "";
+                UseItemResult resultat = callUseItemAPI(joueur.getId(), item.getId(), minotaure.getId());
 
-                if (item instanceof Weapon) {
-                    resultat = callUseItemAPI(joueur.getId(), item.getId(), minotaure.getId());
-                } else if (item instanceof Potion) {
-                    resultat = callUseItemAPI(joueur.getId(), item.getId(), null);
-                } else if (item instanceof Coffre) {
-                    Coffre coffre = (Coffre) item;
+                // Mise à jour des points de vie dans les objets
+                joueur.setPointsDeVie(resultat.pvUtilisateur());
+                minotaure.setPointsDeVie(resultat.pvCible());
 
-                    if (coffre.estVide()) {
-                        MessageDialog.showMessageDialog(gui, "Coffre vide", "Ce coffre ne contient aucun objet.");
-                    } else {
-                        BasicWindow coffreWindow = new BasicWindow("Contenu du coffre : " + coffre.getNom());
-                        coffreWindow.setHints(List.of(Window.Hint.CENTERED));
-                        Panel coffrePanel = new Panel(new LinearLayout(Direction.VERTICAL));
+                // Mise à jour de l'historique avec le message retourné
+                historyPanel.addComponent(new Label("\n" + resultat.message()));
 
-                        for (Item itemDansCoffre : coffre.getContenu()) {
-                            String nomItemCoffre = itemDansCoffre.getNom();
-
-                            Button btnItemCoffre = new Button(nomItemCoffre, () -> {
-                                String resultatCoffre = "";
-
-                                if (itemDansCoffre instanceof Weapon) {
-                                    resultatCoffre = callUseItemAPI(joueur.getId(), item.getId(), minotaure.getId());
-                                } else if (itemDansCoffre instanceof Potion) {
-                                    resultatCoffre = callUseItemAPI(joueur.getId(), item.getId(), null);
-                                } else {
-                                    resultatCoffre = "Cet objet ne peut pas être utilisé.";
-                                }
-
-                                historyPanel.addComponent(new Label("\n" + resultatCoffre));
-                                lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-                                lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
-
-
-
-                                if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
-                                    itemWindow.close();
-                                    showEndCombat(gui, joueur, minotaure, etage, tour,
-                                            historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
-                                            window, mainPanel);
-                                    return;
-                                }
-
-                                try { Thread.sleep(300); } catch (InterruptedException ignored) {}
-
-                                int degatsMinotaure = minotaure.attaquer(joueur);
-                                lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-                                historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
-                                tour.incrementer();
-                                lblTour.setText("Tour : " + tour.getTour());
-                                if (joueur instanceof TWood){
-                                    ((TWood) joueur).regenererPV();
-                                }
-
-                                try { screen.refresh(); } catch (IOException e) { e.printStackTrace(); }
-
-                                coffreWindow.close();
-                            });
-
-                            coffrePanel.addComponent(btnItemCoffre);
-                        }
-
-                        coffreWindow.setComponent(coffrePanel);
-                        gui.addWindowAndWait(coffreWindow);
-                    }
-
-                    return; // Empêche l'exécution du reste du code
-                } else {
-                    resultat = "Cet objet ne peut pas être utilisé.";
-                }
-
-                // Code commun après les utilisations classiques
-                historyPanel.addComponent(new Label("\n" + resultat));
+                // Mise à jour des labels avec les PV mis à jour
                 lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
                 lblMinotaurePV.setText(minotaure.getNom() + " PV: " + minotaure.getPointsDeVie());
                 updateGui(gui);
 
-
-
+                // Vérification de la fin du combat
                 if (joueur.getPointsDeVie() <= 0 || minotaure.getPointsDeVie() <= 0) {
                     itemWindow.close();
                     showEndCombat(gui, joueur, minotaure, etage, tour,
@@ -557,10 +488,11 @@ public class LanternaCombat {
                     return;
                 }
 
+                // Tour du Minotaure
                 try { Thread.sleep(300); } catch (InterruptedException ignored) {}
                 int degatsMinotaure = minotaure.attaquer(joueur);
                 lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-                historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
+                historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégâts"));
                 tour.incrementer();
                 lblTour.setText("Tour : " + tour.getTour());
 
@@ -570,21 +502,9 @@ public class LanternaCombat {
                             historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                             window, mainPanel);
                 }
-                if (joueur instanceof TWood){
-                    ((TWood) joueur).regenererPV();
-                }
-
-                try {
-                    screen.refresh();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
 
                 itemWindow.close();
             });
-
-
-
 
             panel.addComponent(itemButton);
         }
@@ -725,13 +645,14 @@ public class LanternaCombat {
         }
     }
 
-    public static void envoyerChoixPersonnage(String characterId, int userId) {
+    public static void envoyerChoixPersonnage(String characterId, int userId, String jwtToken) {
         try {
             URL url = new URL("http://localhost:8080/characters/select");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + jwtToken);  // <- ici !
 
             String json = String.format("{\"characterId\":\"%s\", \"userId\":\"%s\"}", characterId, userId);
             try (OutputStream os = conn.getOutputStream()) {
@@ -749,6 +670,7 @@ public class LanternaCombat {
             e.printStackTrace();
         }
     }
+
 
     private static String getPassifsMessage(Personnage personnage) {
         StringBuilder passifsMessage = new StringBuilder();
@@ -773,78 +695,70 @@ public class LanternaCombat {
         return passifsMessage.toString();
     }
 
-    private static String callUseItemAPI(String joueurId, String itemId, String cibleId) {
+    private static UseItemResult callUseItemAPI(String joueurId, String itemId, String cibleId) {
         try {
-            URL url = new URL("http://localhost:8080/Combat/" + joueurId + "/use-item");
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setDoOutput(true);
+            // URL de l'API
+            String urlString = "http://localhost:8080/Combat/" + joueurId + "/use-item";
+            URL url = new URL(urlString);
 
-            JSONObject json = new JSONObject();
-            json.put("itemId", itemId);
+            // Connexion HTTP
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Authorization", "Bearer " + jwtToken);
+            connection.setDoOutput(true);
 
+            // Corps de la requête
+            JSONObject requestBody = new JSONObject();
+            requestBody.put("itemId", itemId);
             if (cibleId != null) {
-                json.put("cibleId", cibleId);
-            } else {
-                json.put("cibleId", JSONObject.NULL); // ici c'est ok maintenant
+                requestBody.put("cibleId", cibleId);
             }
 
-
-            System.out.println("JSON envoyé : " + json.toString());
-
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = json.toString().getBytes("utf-8");
+            // Envoi de la requête
+            try (OutputStream os = connection.getOutputStream()) {
+                byte[] input = requestBody.toString().getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
 
-            int responseCode = conn.getResponseCode();
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(conn.getErrorStream(), "utf-8"))) {
-                    StringBuilder errorResponse = new StringBuilder();
-                    String errorLine;
-                    while ((errorLine = br.readLine()) != null) {
-                        errorResponse.append(errorLine.trim());
+            // Lecture de la réponse
+            int status = connection.getResponseCode();
+            if (status == 200) {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
+                    StringBuilder response = new StringBuilder();
+                    String responseLine;
+                    while ((responseLine = br.readLine()) != null) {
+                        response.append(responseLine.trim());
                     }
-                    return "Erreur HTTP " + responseCode + ": " + errorResponse.toString();
-                }
-            }
 
-            try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream(), "utf-8"))) {
-                StringBuilder response = new StringBuilder();
-                String responseLine;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
+                    // Conversion de la réponse JSON en UseItemResult
+                    ObjectMapper mapper = new ObjectMapper();
+                    return mapper.readValue(response.toString(), UseItemResult.class);
                 }
-                return response.toString();
+            } else {
+                System.err.println("Erreur API: " + status);
             }
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            return "Erreur lors de l'appel à l'API : " + e.getMessage();
         }
+
+        // Retourne un résultat par défaut en cas d'erreur
+        return new UseItemResult("Erreur lors de l'utilisation de l'objet.", 0, 0, null);
     }
 
 
-    static class Tour {
-        private int tour;
-        public Tour(int tour) { this.tour = tour; }
-        public int getTour() { return tour; }
-        public void incrementer() { this.tour++; }
-        public void resetTour() { this.tour = 1; }
-    }
+
+
     private static Personnage createCharacter(String characterId) {
         switch (characterId) {
-            case "fistfire":
-                return new FistFire("Fist Fire");
-            case "waterwa":
-                return new WaterWa("Water Wa");
-            case "jowind":
-                return new JoWind("Jo Wind");
-            case "twood":
-                return new TWood("TWood");
+            case "1":
+                return new FistFire("1");
+            case "2":
+                return new WaterWa("2");
+            case "3":
+                return new JoWind("3");
+            case "4":
+                return new TWood("4");
             default:
                 return null; // Si le personnage n'est pas trouvé
         }

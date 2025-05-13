@@ -2,42 +2,24 @@ package be.helha.projets.projetdarktower.Item;
 
 import be.helha.projets.projetdarktower.Model.Personnage;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.UUID;
+import org.bson.types.ObjectId; // Importation de ObjectId pour MongoDB
 
 public class Item {
     @JsonProperty("_id")
-    protected String id;
+    protected String id; // ID sera désormais un ObjectId en format String
     protected String nom;
     protected String type;
     protected double chanceDeDrop; // Pourcentage de chance (entre 0.0 et 100.0)
 
-    public Item(String nom,Double chanceDeDrop) {
+    // Constructeur
+    public Item(String nom, Double chanceDeDrop) {
         this.nom = nom;
         this.type = "Item";
-        this.id = UUID.randomUUID().toString();
+        this.id = new ObjectId().toString(); // Utilisation d'ObjectId pour générer un ID valide
         this.chanceDeDrop = chanceDeDrop; // Valeur par défaut (à définir selon l'objet)
     }
 
-    public static class ObjectIdWrapper {
-        @JsonProperty("$oid")
-        private String oid;
-
-        public String getOid() {
-            return oid;
-        }
-
-        public void setOid(String oid) {
-            this.oid = oid;
-        }
-
-        @Override
-        public String toString() {
-            return oid;
-        }
-    }
-
-    // Getters et setters
-
+    // Getter et setter pour id
     public String getId() {
         return id;
     }
@@ -46,6 +28,7 @@ public class Item {
         this.id = id;
     }
 
+    // Getters et setters pour nom, type, chanceDeDrop
     public String getNom() {
         return nom;
     }
