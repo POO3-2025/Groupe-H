@@ -1,6 +1,7 @@
 package be.helha.projets.projetdarktower.Item;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.bson.Document;
 
@@ -75,23 +76,26 @@ public class Coffre extends Item {
     }
 
     // Méthode fromDocument : crée un Coffre à partir d’un Document MongoDB
-    public static Coffre fromDocument(Document doc) {
-        String nomCoffre = doc.getString("nom");
-        Double chanceDeDrop = doc.getDouble("chanceDeDrop");
-        Coffre coffre = new Coffre(nomCoffre,chanceDeDrop);
-        coffre.setId(doc.getString("_id"));  // Utilisation de l'ID sous forme de String
+    private Document toDocument(Item item) {
+        Document doc = new Document()
+                .append("_id", item.getId())
+                .append("nom", item.getNom())
+                .append("type", item.getType())
+                .append("chanceDeDrop", item.getChanceDeDrop());
 
-        List<Document> contenuDocs = doc.getList("contenu", Document.class, new ArrayList<>());
-        for (Document itemDoc : contenuDocs) {
-            String nomItem = itemDoc.getString("nom");
-            String typeItem = itemDoc.getString("type");
-
-            // Utilisation de la factory pour créer l’objet Item adapté
-            Item item = ItemFactory.creerItem(nomItem);  // Appel à la méthode avec nom de l'item
-            item.setId(itemDoc.getString("_id")); // Properly set the ID for each item
-
-            coffre.ajouterItem(item); // Add to coffre's content
+        if (item instanceof Weapon) {
+            Weapon weapon = (Weapon) item;
+            doc.append("degats", weapon.getDegats());
+        } else if (item instanceof Potion) {
+            Potion potion = (Potion) item;
+            doc.append("pointsDeVieRecuperes", potion.getPointsDeVieRecuperes());
+        } else if (item instanceof Coffre) {
+            // Coffre vide avec 10 emplacements = liste de 10 null
+            List<Object> contenuVide = new ArrayList<>(Collections.nCopies(10, null));
+            doc.append("contenu", contenuVide);
         }
-        return coffre;
+
+        return doc;
     }
+
 }

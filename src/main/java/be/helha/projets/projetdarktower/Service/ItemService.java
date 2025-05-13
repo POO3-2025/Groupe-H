@@ -18,33 +18,35 @@ public class ItemService {
         this.inventaireDAO = inventaireDAO;
     }
 
-    public boolean ajouterItem(Item item) {
-        return inventaireDAO.ajouterItem(item);
+    public boolean ajouterItem(Item item, int idPersonnage) {
+        return inventaireDAO.ajouterItem(item, idPersonnage);
     }
 
-    public List<Item> chargerInventaire() {
-        return inventaireDAO.chargerInventaire();
+    public List<Item> chargerInventaire(int idPersonnage) {
+        return inventaireDAO.chargerInventaire(idPersonnage);
     }
 
     public Item recupererItemParId(String itemId) {
         return inventaireDAO.recupererItemParId(itemId);
     }
 
-    /**
-     * Utilise un item (arme, potion, etc.)
-     * @param item      L'objet à utiliser.
-     * @param utilisateur Le personnage qui utilise l'objet.
-     * @param cible     Le personnage ciblé (null si aucun).
-     * @return Résultat de l'utilisation.
-     */
     public String utiliserItem(Item item, Personnage utilisateur, Personnage cible) {
         return inventaireDAO.UseItem(item, utilisateur, cible);
     }
 
-    /**
-     * Variante : utilise un objet sans cible.
-     */
     public String utiliserItem(Item item, Personnage utilisateur) {
         return utiliserItem(item, utilisateur, null);
+    }
+
+    public String supprimerItem(String itemId) {
+        return inventaireDAO.DeleteItem(itemId);
+    }
+
+    public void initialiserInventaire(int idPersonnage) {
+        inventaireDAO.initialiserInventaireVide(idPersonnage);
+    }
+
+    public boolean possedeCoffre(String userId) {
+        return inventaireDAO.hasCoffreInInventory(userId);
     }
 }
