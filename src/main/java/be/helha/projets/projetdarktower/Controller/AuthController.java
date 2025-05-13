@@ -31,6 +31,7 @@ public class AuthController {
         return ResponseEntity.ok("Utilisateur enregistré avec succès !");
     }
 
+<<<<<<< HEAD
         @PostMapping("/login")
         public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
             User user = userService.findByUsername(loginRequest.getUsername());
@@ -51,4 +52,25 @@ public class AuthController {
             return ResponseEntity.ok(response);
         }
 
+=======
+    @PostMapping("/login")
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+        // Vérification si l'utilisateur existe
+        User user = userService.findByUsername(loginRequest.getUsername());
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Utilisateur inexistant/Mot de passe incorrect");
+        }
+
+        // Vérification si le mot de passe est correct
+        if (!userService.isPasswordCorrect(user, loginRequest.getPassword())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("Utilisateur inexistant/Mot de passe incorrect");
+        }
+
+        // Génération du token JWT si tout est ok
+        String token = jwtUtil.generateToken(loginRequest.getUsername());
+        return ResponseEntity.ok("Bienvenue " + loginRequest.getUsername() + " !");
+    }
+>>>>>>> feature/Inscription
 }
