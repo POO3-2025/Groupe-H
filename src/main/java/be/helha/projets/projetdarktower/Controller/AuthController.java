@@ -42,7 +42,7 @@ public class AuthController {
         // Vérification si le mot de passe est correct
         if (!userService.isPasswordCorrect(user, loginRequest.getPassword())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Mot de passe incorrect . Veuillez saisir le bon mot de passe !");
+                    .body("Utilisateur inexistant/Mot de passe incorrect");
         }
 
         // Génération du token JWT si tout est ok
