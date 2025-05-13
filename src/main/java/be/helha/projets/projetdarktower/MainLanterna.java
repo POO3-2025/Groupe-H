@@ -44,12 +44,8 @@ public class MainLanterna {
     private static void showMainMenu(WindowBasedTextGUI gui, Screen screen) {
         BasicWindow window = new BasicWindow("Menu DarkTower");
         Panel panel = new Panel(new GridLayout(1));
-        String introText = "\nDarkTower, le jeu où franchir les étages d'une tour semble impossible. "
-                + "\nChaque défi devient plus complexe, rendant l'ascension inaccessibile. "
-                + "\nLa tour est un piège où l'échec est inévitable.";
-        panel.addComponent(new Label(introText));
-        panel.addComponent(new Label("\n===== MENU DarkTower ====="));
-        panel.addComponent(new EmptySpace());
+
+        panel.addComponent(new Label("===== MENU DarkTower ====="));
         panel.addComponent(new Button("1. S'inscrire", () -> {
             window.close();
             showRegisterMenu(gui);
@@ -74,8 +70,6 @@ public class MainLanterna {
     private static void showRegisterMenu(WindowBasedTextGUI gui) {
         BasicWindow window = new BasicWindow("Inscription");
         Panel panel = new Panel(new GridLayout(2));
-
-
 
         TextBox usernameBox = new TextBox();
         TextBox passwordBox = new TextBox().setMask('*');
