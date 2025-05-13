@@ -1,5 +1,6 @@
 package be.helha.projets.projetdarktower.Service;
 
+import be.helha.projets.projetdarktower.DTO.UseItemResult;
 import be.helha.projets.projetdarktower.Inventaire.InventaireDAOImpl;
 import be.helha.projets.projetdarktower.Item.Item;
 import be.helha.projets.projetdarktower.Model.Personnage;
@@ -30,11 +31,11 @@ public class ItemService {
         return inventaireDAO.recupererItemParId(itemId);
     }
 
-    public String utiliserItem(Item item, Personnage utilisateur, Personnage cible) {
+    public UseItemResult utiliserItem(Item item, Personnage utilisateur, Personnage cible) {
         return inventaireDAO.UseItem(item, utilisateur, cible);
     }
 
-    public String utiliserItem(Item item, Personnage utilisateur) {
+    public UseItemResult utiliserItem(Item item, Personnage utilisateur) {
         return utiliserItem(item, utilisateur, null);
     }
 

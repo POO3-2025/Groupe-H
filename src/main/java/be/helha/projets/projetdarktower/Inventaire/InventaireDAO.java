@@ -1,5 +1,6 @@
 package be.helha.projets.projetdarktower.Inventaire;
 
+import be.helha.projets.projetdarktower.DTO.UseItemResult;
 import be.helha.projets.projetdarktower.Item.Item;
 import be.helha.projets.projetdarktower.Model.Personnage;
 
@@ -19,5 +20,5 @@ public interface InventaireDAO {
 
     String DeleteItem(String itemId);
 
-    String UseItem(Item item, Personnage utilisateur, Personnage cible);
+    UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible);
 }

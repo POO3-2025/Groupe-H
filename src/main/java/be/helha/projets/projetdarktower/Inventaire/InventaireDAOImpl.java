@@ -1,5 +1,6 @@
 package be.helha.projets.projetdarktower.Inventaire;
 
+import be.helha.projets.projetdarktower.DTO.UseItemResult;
 import be.helha.projets.projetdarktower.Item.Weapon;
 import be.helha.projets.projetdarktower.Item.Item;
 import be.helha.projets.projetdarktower.Item.ItemFactory;
@@ -11,6 +12,7 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
@@ -124,15 +126,35 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
     public Item recupererItemParId(String itemId) {
-        Document doc = collection.find(new Document("_id", itemId)).first();
-        if (doc != null) {
-            String nom = doc.getString("nom");
-            Item item = ItemFactory.creerItem(nom);
-            item.setId(doc.getString("_id"));
-            return item;
+        System.out.println("Recherche de l'item avec l'ID : " + itemId);
+
+        // Trouver le document Inventaire qui contient l'item avec cet _id
+        Document match = collection.find(
+                new Document("items._id", itemId)
+        ).first();
+
+        if (match != null) {
+            // Parcours de la liste des items pour récupérer celui avec le bon ID
+            List<Document> items = (List<Document>) match.get("items");
+            for (Document doc : items) {
+                if (itemId.equals(doc.getString("_id"))) {
+                    String nom = doc.getString("nom");
+                    Item item = ItemFactory.creerItem(nom);
+                    item.setId(doc.getString("_id"));
+                    return item;
+                }
+            }
         }
+
+        System.out.println("Aucun item trouvé avec cet ID.");
         return null;
     }
+
+
+
+
+
+
     public String DeleteItem(String itemId) {
         // On parcourt chaque inventaire pour chercher l'item
         FindIterable<Document> allInventories = collection.find();
@@ -185,48 +207,56 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
     // Méthode d'utilisation d'un item (Potion, Weapon, etc.)
-    public String UseItem(Item item, Personnage utilisateur, Personnage cible) {
+    public UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible) {
+        String message;
+        String itemSupprimeId = null;
+
         if (item instanceof Weapon) {
             Weapon weapon = (Weapon) item;
+
             if (cible != null) {
                 int degats = weapon.getDegats();
                 int vieRestante = cible.getPointsDeVie() - degats;
                 cible.setPointsDeVie(vieRestante);
 
-                // Gérer la durabilité
-
-
-                // MAJ dans MongoDB
                 decrementUsageInMongo(weapon.getId());
 
                 int durabilite = RecupererUsageItem(weapon.getId());
-                // Si l'arme n'a plus d'utilisations, on la supprime
                 if (durabilite <= 0) {
                     DeleteItem(weapon.getId());
+                    itemSupprimeId = weapon.getId();
                 }
 
-                return "L'utilisateur " + utilisateur.getNom() + " attaque la cible " + cible.getNom() + " avec l'épée " + weapon.getNom() + " infligeant " + degats + " dégâts.";
+                message = "L'utilisateur " + utilisateur.getNom() + " attaque la cible " + cible.getNom() + " avec l'épée " + weapon.getNom() + " infligeant " + degats + " dégâts.";
             } else {
-                return "Cible non spécifiée pour l'attaque.";
+                message = "Cible non spécifiée pour l'attaque.";
             }
         } else if (item instanceof Potion) {
             Potion potion = (Potion) item;
+
             int pointsDeVie = potion.getPointsDeVieRecuperes() + utilisateur.getPointsDeVie();
             utilisateur.setPointsDeVie(pointsDeVie);
 
-            decrementUsageInMongo(item.getId());
+            decrementUsageInMongo(potion.getId());
             int durabilite = RecupererUsageItem(potion.getId());
+
             if (durabilite <= 0) {
                 DeleteItem(potion.getId());
+                itemSupprimeId = potion.getId();
             }
-                decrementUsageInMongo(item.getId());
 
-            return "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() + " et récupère " + potion.getPointsDeVieRecuperes() + " points de vie.";
+            message = "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() + " et récupère " + potion.getPointsDeVieRecuperes() + " points de vie.";
+        } else {
+            message = "Cet objet ne peut pas être utilisé.";
         }
 
-        return "Cet objet ne peut pas être utilisé.";
+        return new UseItemResult(
+                message,
+                utilisateur.getPointsDeVie(),
+                cible != null ? cible.getPointsDeVie() : -1,
+                itemSupprimeId
+        );
     }
-
     private int RecupererUsageItem(String itemId) {
         Document inventory = collection.find(new Document("items._id", itemId)).first();
         if (inventory != null) {
