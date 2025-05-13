@@ -36,7 +36,7 @@ public class AuthController {
         User user = userService.findByUsername(loginRequest.getUsername());
         if (user == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body("Utilisateur inexistant");
+                    .body("Utilisateur inexistant/Mot de passe incorrect");
         }
 
         // Vérification si le mot de passe est correct
