@@ -183,20 +183,21 @@ public class InventaireDAOImpl implements InventaireDAO {
     }
 
     //MAJ LA DB APRES CHAQUE UTILISATION
+    // Dans la méthode `UseItem` de la classe `InventaireDAOImpl`
     private void decrementUsageInMongo(String itemId) {
         Document filter = new Document("items._id", itemId);
 
-        Document update = new Document("$inc",
-                new Document("items.$[elem].Usage_Time", -1));
+        // Décrémentation de l'usage de l'item
+        Document update = new Document("$inc", new Document("items.$[elem].Usage_Time", -1));
 
-        List<Bson> arrayFilters = List.of(
-                Filters.eq("elem._id", itemId)
-        );
+        List<Bson> arrayFilters = List.of(Filters.eq("elem._id", itemId));
 
         UpdateOptions options = new UpdateOptions().arrayFilters(arrayFilters);
 
+        // Appliquer la mise à jour dans MongoDB
         collection.updateOne(filter, update, options);
     }
+
 
 
 
@@ -210,10 +211,11 @@ public class InventaireDAOImpl implements InventaireDAO {
         String itemSupprimeId = null;
 
         if (item instanceof Potion) {
+            System.out.println("cible pv" + cible.getPointsDeVie());
             Potion potion = (Potion) item;
             int pointsRecuperes = potion.getPointsDeVieRecuperes();
             int nouvelleVie = utilisateur.getPointsDeVie() + pointsRecuperes;
-            utilisateur.setPointsDeVie(nouvelleVie);
+            utilisateur.setPointsDeVie(nouvelleVie);  // Mise à jour des PV du joueur
 
             message = "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() +
                     " et récupère " + pointsRecuperes + " points de vie.";
@@ -221,8 +223,8 @@ public class InventaireDAOImpl implements InventaireDAO {
 
             // Supprimer l'item après utilisation
             DeleteItem(item.getId());
-
-            // Retourne les PV actuels de la cible si elle existe, sinon -1
+            System.out.println("cible pv" + cible.getPointsDeVie());
+            // Retourne les PV actuels de la cible sans modifier les PV du Minotaure
             return new UseItemResult(message, utilisateur.getPointsDeVie(),
                     (cible != null ? cible.getPointsDeVie() : -1), itemSupprimeId);
         }
@@ -240,6 +242,15 @@ public class InventaireDAOImpl implements InventaireDAO {
 
                 // Décrémenter la durabilité de l'arme
                 decrementUsageInMongo(item.getId());
+                int usages = RecupererUsageItem(item.getId());
+                weapon.setUsages(weapon.getUsages() - 1); // Mise à jour locale des usages
+
+                // Vérifie si les usages sont à 0 et supprime l'item
+                if (usages <= 0) {
+                    DeleteItem(item.getId());
+                    itemSupprimeId = item.getId(); // Indique que l'item a été supprimé
+                    message += " L'arme " + weapon.getNom() + " est cassée et a été supprimée.";
+                }
             } else {
                 message = "Aucune cible spécifiée pour l'attaque.";
             }
@@ -287,6 +298,19 @@ public class InventaireDAOImpl implements InventaireDAO {
         System.out.println("Inventaire vide initialisé pour le personnage " + idPersonnage);
     }
 
+    public void viderInventaire(int idPersonnage) {
+        Document query = new Document("idPersonnage", idPersonnage);
+        Document existing = collection.find(query).first();
+
+        if (existing == null) {
+            System.out.println("Aucun inventaire trouvé pour le personnage " + idPersonnage);
+            return;
+        }
+
+        Document update = new Document("$set", new Document("items", Collections.nCopies(10, null)));
+        collection.updateOne(query, update);
+        System.out.println("Inventaire vidé pour le personnage " + idPersonnage);
+    }
 
 
     // Convertit un item en document MongoDB pour l'insertion

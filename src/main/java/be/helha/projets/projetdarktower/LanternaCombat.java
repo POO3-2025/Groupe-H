@@ -191,14 +191,15 @@ public class LanternaCombat {
         panel.addComponent(new Label("Bienvenue dans DarkTower !"));
 
         panel.addComponent(new Button("Choisir Personnage", () -> {
-            showCharacterSelection(gui);
             window.close();
+            showCharacterSelection(gui);
+
         }));
         panel.addComponent(new Button("Déconnexion", () -> {
+            window.close();
             isLoggedIn = false;
             jwtToken = null;
             MessageDialog.showMessageDialog(gui, "Info", "Déconnecté avec succès.");
-            window.close();
         }));
 
         panel.addComponent(new Button("Quitter", () -> {
@@ -247,6 +248,7 @@ public class LanternaCombat {
             }
 
             Button BtnItem = new Button("suivant", () -> {
+                inventaireDAO.viderInventaire(userId);
                 currentWindow.close();
                 envoyerChoixPersonnage(characterId, userId, jwtToken);
                 afficherEtChoisirItem(gui, currentWindow, selectedPersonnage, () -> {
@@ -432,9 +434,11 @@ public class LanternaCombat {
 
             Button itemButton = new Button(nomItem, () -> {
                 try {
-
+                    if (item instanceof Potion) {
                         resultat[0] = callUseItemAPI(joueur.getId(), item.getId(), getMinotaurusActuel().getId());
-
+                    } else {
+                        resultat[0] = callUseItemAPI(joueur.getId(), item.getId(), getMinotaurusActuel().getId());
+                    }
 
                     // Mise à jour des points de vie dans les objets
                     System.out.println("PV joueur avant : " + joueur.getPointsDeVie());
@@ -451,7 +455,9 @@ public class LanternaCombat {
                     // Mise à jour des labels avec les PV mis à jour
                     lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
                     lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
+
                     try{sleep(300);}catch (InterruptedException ignored) {}
+
                     if (joueur.getPointsDeVie() <= 0 || minotaureActuel.getPointsDeVie() <= 0) {
                         showEndCombat(gui, joueur, minotaureActuel, etage, tour,
                                 historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
@@ -486,6 +492,10 @@ public class LanternaCombat {
 
             panel.addComponent(itemButton);
         }
+        panel.addComponent(new Button("Retour", () -> {
+            itemWindow.close();
+            window.setComponent(mainPanel);
+        }));
 
         itemWindow.setComponent(panel);
         gui.addWindowAndWait(itemWindow);
@@ -563,7 +573,7 @@ public class LanternaCombat {
         historyPanel.removeAllComponents();
         historyPanel.addComponent(new Label("Début du combat"));
 
-        etage.resetEtage();
+        etageActuel = new Etage(1);
         minotaureActuel.setNiveau(etage.getEtage());
         minotaureActuel.resetPointsDeVie(); // Réinitialise les PV du Minotaure
         joueur.resetPointDeVie(); // Réinitialise les PV du joueur
@@ -572,6 +582,7 @@ public class LanternaCombat {
         lblTour.setText("Tour : " + tour.getTour());
         lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
         lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
+        inventaireDAO.viderInventaire(userId);
     }
 
     private static void updateGui(MultiWindowTextGUI gui) {
@@ -738,7 +749,7 @@ public class LanternaCombat {
         return passifsMessage.toString();
     }
     public static Minotaurus getMinotaurusActuel() {
-        if (minotaureActuel == null || minotaureActuel.getPointsDeVie() <= 0) {
+        if (minotaureActuel == null) {
             minotaureActuel = new Minotaurus("999", etageActuel.getEtage());
         }
         return minotaureActuel;
