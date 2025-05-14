@@ -35,9 +35,6 @@ public class ItemService {
         return inventaireDAO.UseItem(item, utilisateur, cible);
     }
 
-    public UseItemResult utiliserItem(Item item, Personnage utilisateur) {
-        return utiliserItem(item, utilisateur, null);
-    }
 
     public String supprimerItem(String itemId) {
         return inventaireDAO.DeleteItem(itemId);

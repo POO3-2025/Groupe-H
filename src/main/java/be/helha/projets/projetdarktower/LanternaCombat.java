@@ -432,11 +432,9 @@ public class LanternaCombat {
 
             Button itemButton = new Button(nomItem, () -> {
                 try {
-                    if (item instanceof Potion) {
-                        resultat[0] = callUseItemAPI(joueur.getId(), item.getId(), null);
-                    } else {
+
                         resultat[0] = callUseItemAPI(joueur.getId(), item.getId(), getMinotaurusActuel().getId());
-                    }
+
 
                     // Mise à jour des points de vie dans les objets
                     System.out.println("PV joueur avant : " + joueur.getPointsDeVie());
@@ -458,6 +456,22 @@ public class LanternaCombat {
                         showEndCombat(gui, joueur, minotaureActuel, etage, tour,
                                 historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                                 window, mainPanel);
+                    }
+
+                    int degatsMinotaure = minotaureActuel.attaquer(joueur);
+                    lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                    historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
+
+                    tour.incrementer();
+                    lblTour.setText("Tour : " + tour.getTour());
+
+                    if (joueur.getPointsDeVie() <= 0 || minotaureActuel.getPointsDeVie() <= 0) {
+                        showEndCombat(gui, joueur, minotaureActuel, etage, tour,
+                                historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
+                                window, mainPanel);
+                    }
+                    if (joueur instanceof TWood) {
+                        ((TWood) joueur).regenererPV();
                     }
 
                     historyPanel.addComponent(new Label("\n" + resultat[0].message()));

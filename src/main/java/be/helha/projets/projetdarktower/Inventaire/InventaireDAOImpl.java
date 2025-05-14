@@ -133,10 +133,7 @@ public class InventaireDAOImpl implements InventaireDAO {
         if (match != null) {
             List<Document> items = (List<Document>) match.get("items");
             for (Document doc : items) {
-                if (doc == null) { // Vérifie si l'objet est null
-                    continue; // Ignore cet objet et passe au suivant
-                }
-                if (itemId.equals(doc.getString("_id"))) {
+                if (doc != null && itemId.equals(doc.getString("_id"))) { // Vérifie que l'item n'est pas null
                     String nom = doc.getString("nom");
                     Item item = ItemFactory.creerItem(nom);
                     item.setId(doc.getString("_id"));
@@ -206,75 +203,53 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
     // Méthode d'utilisation d'un item (Potion, Weapon, etc.)
+
+    @Override
     public UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible) {
         String message;
         String itemSupprimeId = null;
 
-        if (item instanceof Weapon) {
-            Weapon weapon = (Weapon) item;
-
-            // Vérification des dégâts de l'arme
-            System.out.println("Dégâts de l'arme : " + weapon.getDegats());  // Ajout du log pour vérifier les dégâts
-
-            if (cible != null) {
-                if (cible.getPointsDeVie() <= 0) {
-                    message = "La cible " + cible.getNom() + " est déjà vaincue.";
-                    return new UseItemResult(
-                            message,
-                            utilisateur.getPointsDeVie(),
-                            cible.getPointsDeVie(),
-                            null
-                    );
-                }
-
-                int degats = weapon.getDegats();
-                System.out.println("PV cible avant attaque : " + cible.getPointsDeVie());
-                System.out.println("Dégâts infligés : " + degats);
-
-                int vieRestante = Math.max(0, cible.getPointsDeVie() - degats);
-                cible.setPointsDeVie(vieRestante);
-
-                System.out.println("PV cible après attaque : " + cible.getPointsDeVie());
-
-                decrementUsageInMongo(weapon.getId());
-                int durabilite = RecupererUsageItem(item.getId());
-                if (durabilite <= 0) {
-                    DeleteItem(item.getId());
-                    itemSupprimeId = item.getId();
-                    System.out.println("Item supprimé : " + itemSupprimeId);
-                }
-
-                message = "L'utilisateur " + utilisateur.getNom() + " attaque la cible " + cible.getNom() + " avec l'épée " + weapon.getNom() + " infligeant " + degats + " dégâts.";
-            } else {
-                message = "Cible non spécifiée pour l'attaque.";
-            }
-        } else if (item instanceof Potion) {
+        if (item instanceof Potion) {
             Potion potion = (Potion) item;
+            int pointsRecuperes = potion.getPointsDeVieRecuperes();
+            int nouvelleVie = utilisateur.getPointsDeVie() + pointsRecuperes;
+            utilisateur.setPointsDeVie(nouvelleVie);
 
-            int pointsDeVie = potion.getPointsDeVieRecuperes() + utilisateur.getPointsDeVie();
-            utilisateur.setPointsDeVie(pointsDeVie);
+            message = "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() +
+                    " et récupère " + pointsRecuperes + " points de vie.";
+            itemSupprimeId = item.getId();
 
-            decrementUsageInMongo(potion.getId());
-            int durabilite = RecupererUsageItem(potion.getId());
+            // Supprimer l'item après utilisation
+            DeleteItem(item.getId());
 
-
-            if (durabilite <= 0) {
-                DeleteItem(potion.getId());
-                itemSupprimeId = potion.getId();
-                System.out.println("Item supprimé : " + itemSupprimeId);
-            }
-
-            message = "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() + " et récupère " + potion.getPointsDeVieRecuperes() + " points de vie.";
-        } else {
-            message = "Cet objet ne peut pas être utilisé.";
+            // Retourne les PV actuels de la cible si elle existe, sinon -1
+            return new UseItemResult(message, utilisateur.getPointsDeVie(),
+                    (cible != null ? cible.getPointsDeVie() : -1), itemSupprimeId);
         }
 
-        return new UseItemResult(
-                message,
-                utilisateur.getPointsDeVie(),
-                cible != null ? cible.getPointsDeVie() : -1,
-                itemSupprimeId
-        );
+        if (item instanceof Weapon) {
+            Weapon weapon = (Weapon) item;
+            if (cible != null) {
+                int degats = weapon.getDegats();
+                int nouvelleVieCible = Math.max(0, cible.getPointsDeVie() - degats);
+                cible.setPointsDeVie(nouvelleVieCible);
+
+                message = "L'utilisateur " + utilisateur.getNom() + " attaque " + cible.getNom() +
+                        " avec " + weapon.getNom() + " et inflige " + degats + " dégâts.";
+                itemSupprimeId = null;
+
+                // Décrémenter la durabilité de l'arme
+                decrementUsageInMongo(item.getId());
+            } else {
+                message = "Aucune cible spécifiée pour l'attaque.";
+            }
+
+            return new UseItemResult(message, utilisateur.getPointsDeVie(),
+                    (cible != null ? cible.getPointsDeVie() : -1), itemSupprimeId);
+        }
+
+        return new UseItemResult("Type d'item non supporté.", utilisateur.getPointsDeVie(),
+                (cible != null ? cible.getPointsDeVie() : -1), null);
     }
 
     private int RecupererUsageItem(String itemId) {
@@ -282,7 +257,7 @@ public class InventaireDAOImpl implements InventaireDAO {
         if (inventory != null) {
             List<Document> items = (List<Document>) inventory.get("items");
             for (Document item : items) {
-                if (itemId.equals(item.getString("_id"))) {
+                if (item != null && itemId.equals(item.getString("_id"))) { // Vérifie que l'item n'est pas null
                     return item.getInteger("Usage_Time", 0);
                 }
             }
