@@ -26,8 +26,9 @@ public class CharacterService {
     }
 
     public Personnage selectCharacter(String characterId) {
+            System.out.println("Recherche du personnage avec l'ID : " + characterId);
         if ("999".equals(characterId)) {
-            return personnages.get("minotaurus");
+            return LanternaCombat.getMinotaurusActuel();
         }
         if ("1".equals(characterId) ) {
             return personnages.get("fistfire");

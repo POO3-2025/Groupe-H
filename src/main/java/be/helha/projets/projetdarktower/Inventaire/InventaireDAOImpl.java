@@ -128,15 +128,14 @@ public class InventaireDAOImpl implements InventaireDAO {
     public Item recupererItemParId(String itemId) {
         System.out.println("Recherche de l'item avec l'ID : " + itemId);
 
-        // Trouver le document Inventaire qui contient l'item avec cet _id
-        Document match = collection.find(
-                new Document("items._id", itemId)
-        ).first();
+        Document match = collection.find(new Document("items._id", itemId)).first();
 
         if (match != null) {
-            // Parcours de la liste des items pour récupérer celui avec le bon ID
             List<Document> items = (List<Document>) match.get("items");
             for (Document doc : items) {
+                if (doc == null) { // Vérifie si l'objet est null
+                    continue; // Ignore cet objet et passe au suivant
+                }
                 if (itemId.equals(doc.getString("_id"))) {
                     String nom = doc.getString("nom");
                     Item item = ItemFactory.creerItem(nom);
@@ -214,17 +213,35 @@ public class InventaireDAOImpl implements InventaireDAO {
         if (item instanceof Weapon) {
             Weapon weapon = (Weapon) item;
 
+            // Vérification des dégâts de l'arme
+            System.out.println("Dégâts de l'arme : " + weapon.getDegats());  // Ajout du log pour vérifier les dégâts
+
             if (cible != null) {
+                if (cible.getPointsDeVie() <= 0) {
+                    message = "La cible " + cible.getNom() + " est déjà vaincue.";
+                    return new UseItemResult(
+                            message,
+                            utilisateur.getPointsDeVie(),
+                            cible.getPointsDeVie(),
+                            null
+                    );
+                }
+
                 int degats = weapon.getDegats();
-                int vieRestante = cible.getPointsDeVie() - degats;
+                System.out.println("PV cible avant attaque : " + cible.getPointsDeVie());
+                System.out.println("Dégâts infligés : " + degats);
+
+                int vieRestante = Math.max(0, cible.getPointsDeVie() - degats);
                 cible.setPointsDeVie(vieRestante);
 
-                decrementUsageInMongo(weapon.getId());
+                System.out.println("PV cible après attaque : " + cible.getPointsDeVie());
 
-                int durabilite = RecupererUsageItem(weapon.getId());
+                decrementUsageInMongo(weapon.getId());
+                int durabilite = RecupererUsageItem(item.getId());
                 if (durabilite <= 0) {
-                    DeleteItem(weapon.getId());
-                    itemSupprimeId = weapon.getId();
+                    DeleteItem(item.getId());
+                    itemSupprimeId = item.getId();
+                    System.out.println("Item supprimé : " + itemSupprimeId);
                 }
 
                 message = "L'utilisateur " + utilisateur.getNom() + " attaque la cible " + cible.getNom() + " avec l'épée " + weapon.getNom() + " infligeant " + degats + " dégâts.";
@@ -240,9 +257,11 @@ public class InventaireDAOImpl implements InventaireDAO {
             decrementUsageInMongo(potion.getId());
             int durabilite = RecupererUsageItem(potion.getId());
 
+
             if (durabilite <= 0) {
                 DeleteItem(potion.getId());
                 itemSupprimeId = potion.getId();
+                System.out.println("Item supprimé : " + itemSupprimeId);
             }
 
             message = "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() + " et récupère " + potion.getPointsDeVieRecuperes() + " points de vie.";
@@ -257,6 +276,7 @@ public class InventaireDAOImpl implements InventaireDAO {
                 itemSupprimeId
         );
     }
+
     private int RecupererUsageItem(String itemId) {
         Document inventory = collection.find(new Document("items._id", itemId)).first();
         if (inventory != null) {
