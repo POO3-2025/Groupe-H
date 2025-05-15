@@ -42,4 +42,52 @@ public class InventaireController {
         List<Item> inventaire = itemService.chargerInventaire(idPersonnage);
         return ResponseEntity.ok(inventaire);
     }
+
+    @GetMapping("/{idPersonnage}/coffre")
+    public ResponseEntity<List<Item>> recupererContenuCoffre(@PathVariable int idPersonnage) {
+        List<Item> coffre = itemService.recupererContenuCoffre(idPersonnage);
+        return ResponseEntity.ok(coffre);
+    }
+
+    @PostMapping("/{idPersonnage}/coffre/ajouter")
+    public ResponseEntity<String> ajouterItemDansCoffre(@PathVariable int idPersonnage, @RequestBody Item item) {
+        boolean success = itemService.ajouterItemDansCoffre(item, idPersonnage);
+        if (success) {
+            return ResponseEntity.ok("Item ajouté dans le coffre.");
+        } else {
+            return ResponseEntity.badRequest().body("Impossible d'ajouter l'item dans le coffre.");
+        }
+    }
+
+    @DeleteMapping("/{idPersonnage}/coffre/{itemId}")
+    public ResponseEntity<String> supprimerItemDuCoffre(@PathVariable int idPersonnage, @PathVariable String itemId) {
+        boolean success = itemService.supprimerItemDuCoffre(itemId, idPersonnage);
+        if (success) {
+            return ResponseEntity.ok("Item supprimé du coffre.");
+        } else {
+            return ResponseEntity.badRequest().body("Item introuvable dans le coffre.");
+        }
+    }
+
+    @GetMapping("/coffre/existe/{userId}")
+    public ResponseEntity<Boolean> possedeCoffre(@PathVariable String userId) {
+        boolean existe = itemService.possedeCoffre(userId);
+        return ResponseEntity.ok(existe);
+    }
+
+    @GetMapping("/item/{itemId}")
+    public ResponseEntity<Item> recupererItemParId(@PathVariable String itemId) {
+        Item item = itemService.recupererItemParId(itemId);
+        if (item != null) {
+            return ResponseEntity.ok(item);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @DeleteMapping("/item/{itemId}")
+    public ResponseEntity<String> supprimerItem(@PathVariable String itemId) {
+        String result = itemService.supprimerItem(itemId);
+        return ResponseEntity.ok(result);
+    }
 }

@@ -17,10 +17,11 @@ public class LanternaInventaireManager {
     private final InventaireDAOImpl inventaireDAO = new InventaireDAOImpl();
     private final WindowBasedTextGUI gui;
     private final Personnage personnage;
-    private static int userId;
+    private static int userId = 3;
     public LanternaInventaireManager(WindowBasedTextGUI gui, Personnage personnage) {
         this.gui = gui;
         this.personnage = personnage;
+
     }
 
     public void show() {
@@ -29,8 +30,8 @@ public class LanternaInventaireManager {
 
         panel.addComponent(new Label("=== INVENTAIRE ==="));
 
-        List<Item> inventaire = inventaireDAO.chargerInventaire(personnage.getId());
-        List<Item> coffre = inventaireDAO.recupererContenuCoffre(personnage.getId());
+        List<Item> inventaire = inventaireDAO.chargerInventaire(userId);
+        List<Item> coffre = inventaireDAO.recupererContenuCoffre(userId);
 
         if (inventaire.isEmpty()) {
             panel.addComponent(new Label("Aucun item dans l'inventaire."));
@@ -71,7 +72,7 @@ public class LanternaInventaireManager {
             if (depuisInventaire) {
                 inventaireDAO.DeleteItem(item.getId());
             } else {
-                inventaireDAO.supprimerItemDuCoffre(item.getId(), personnage.getId());
+                inventaireDAO.supprimerItemDuCoffre(item.getId(), userId);
             }
             MessageDialog.showMessageDialog(gui, "Suppression", "Item supprimé.");
             window.close();
@@ -83,7 +84,7 @@ public class LanternaInventaireManager {
             boolean hasCoffre = inventaireDAO.hasCoffreInInventory(String.valueOf(personnage.getId()));
             if (hasCoffre) {
                 panel.addComponent(new Button("Ajouter au coffre", () -> {
-                    boolean success = inventaireDAO.ajouterItemDansCoffre(item, personnage.getId());
+                    boolean success = inventaireDAO.ajouterItemDansCoffre(item, userId);
                     if (success) {
                         inventaireDAO.DeleteItem(item.getId());
                         MessageDialog.showMessageDialog(gui, "Succès", "Item déplacé dans le coffre.");
@@ -97,9 +98,9 @@ public class LanternaInventaireManager {
             }
         } else {
             panel.addComponent(new Button("Ajouter à l'inventaire", () -> {
-                boolean ok = inventaireDAO.ajouterItem(item, personnage.getId());
+                boolean ok = inventaireDAO.ajouterItem(item, userId);
                 if (ok) {
-                    inventaireDAO.supprimerItemDuCoffre(item.getId(), personnage.getId());
+                    inventaireDAO.supprimerItemDuCoffre(item.getId(), userId);
                     MessageDialog.showMessageDialog(gui, "Succès", "Item déplacé dans l'inventaire.");
                 } else {
                     MessageDialog.showMessageDialog(gui, "Erreur", "Inventaire plein !");

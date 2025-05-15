@@ -19,16 +19,15 @@ public class CharacterService {
         personnages.put("waterwa", new WaterWa("2"));
         personnages.put("jowind", new JoWind("3"));
         personnages.put("twood", new TWood("4"));
+        personnages.put("Minotaurus", new Minotaurus("999",1)); // Personnage de test
 
-        // Ajoute le Minotaurus avec le niveau actuel
-        int niveauActuel = LanternaCombat.etageActuel.getEtage();
-        personnages.put("minotaurus", new Minotaurus("999", niveauActuel));  // On passe le niveau récupéré
+          // On passe le niveau récupéré
     }
 
     public Personnage selectCharacter(String characterId) {
             System.out.println("Recherche du personnage avec l'ID : " + characterId);
         if ("999".equals(characterId)) {
-            return LanternaCombat.getMinotaurusActuel();
+            return personnages.get("Minotaurus");
         }
         if ("1".equals(characterId) ) {
             return personnages.get("fistfire");

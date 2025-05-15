@@ -219,30 +219,23 @@ public class InventaireDAOImpl implements InventaireDAO {
         String itemSupprimeId = null;
 
         if (item instanceof Potion) {
-            System.out.println("cible pv" + cible.getPointsDeVie());
             Potion potion = (Potion) item;
             int pointsRecuperes = potion.getPointsDeVieRecuperes();
-            int nouvelleVie = utilisateur.getPointsDeVie() + pointsRecuperes;
-            utilisateur.setPointsDeVie(nouvelleVie);  // Mise à jour des PV du joueur
 
             message = "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() +
                     " et récupère " + pointsRecuperes + " points de vie.";
             itemSupprimeId = item.getId();
 
-            // Supprimer l'item après utilisation
             DeleteItem(item.getId());
-            System.out.println("cible pv" + cible.getPointsDeVie());
             // Retourne les PV actuels de la cible sans modifier les PV du Minotaure
-            return new UseItemResult(message, utilisateur.getPointsDeVie(),
-                    (cible != null ? cible.getPointsDeVie() : -1), itemSupprimeId);
+            return new UseItemResult(message, 0,
+                    pointsRecuperes, itemSupprimeId);
         }
 
         if (item instanceof Weapon) {
             Weapon weapon = (Weapon) item;
             if (cible != null) {
                 int degats = weapon.getDegats();
-                int nouvelleVieCible = Math.max(0, cible.getPointsDeVie() - degats);
-                cible.setPointsDeVie(nouvelleVieCible);
 
                 message = "L'utilisateur " + utilisateur.getNom() + " attaque " + cible.getNom() +
                         " avec " + weapon.getNom() + " et inflige " + degats + " dégâts.";
@@ -263,12 +256,12 @@ public class InventaireDAOImpl implements InventaireDAO {
                 message = "Aucune cible spécifiée pour l'attaque.";
             }
 
-            return new UseItemResult(message, utilisateur.getPointsDeVie(),
-                    (cible != null ? cible.getPointsDeVie() : -1), itemSupprimeId);
+            return new UseItemResult(message, weapon.getDegats(),
+                    0, itemSupprimeId);
         }
 
-        return new UseItemResult("Type d'item non supporté.", utilisateur.getPointsDeVie(),
-                (cible != null ? cible.getPointsDeVie() : -1), null);
+        return new UseItemResult("Type d'item non supporté.", 0,
+                0, null);
     }
 
     private int RecupererUsageItem(String itemId) {

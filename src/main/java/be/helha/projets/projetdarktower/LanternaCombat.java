@@ -18,7 +18,12 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFrame;
 import be.helha.projets.projetdarktower.Service.CharacterService;
 import org.json.JSONObject;
+
+import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -34,6 +39,7 @@ public class LanternaCombat {
     private static String jwtToken = null;
     private static boolean isLoggedIn = false;
     private static int userId;
+    private static String NomUser = null;
     public static Etage etageActuel = new Etage(1);
     public static Tour tourActuel = new Tour(1);
     public static Minotaurus minotaureActuel = new Minotaurus("999", etageActuel.getEtage());
@@ -63,6 +69,7 @@ public class LanternaCombat {
 
     private static void showMainMenu(MultiWindowTextGUI gui, Screen screen) {
         BasicWindow window = new BasicWindow("Menu DarkTower");
+        window.setHints(List.of(Window.Hint.CENTERED));
         Panel panel = new Panel(new GridLayout(1));
 
         panel.addComponent(new Label("===== MENU DarkTower ====="));
@@ -89,6 +96,7 @@ public class LanternaCombat {
 
     private static void showRegisterMenu(MultiWindowTextGUI gui) {
         BasicWindow window = new BasicWindow("Inscription");
+        window.setHints(List.of(Window.Hint.CENTERED));
         Panel panel = new Panel(new GridLayout(2));
 
         TextBox usernameBox = new TextBox();
@@ -136,6 +144,7 @@ public class LanternaCombat {
 
     private static void showLoginMenu(MultiWindowTextGUI gui) {
         BasicWindow window = new BasicWindow("Connexion");
+        window.setHints(List.of(Window.Hint.CENTERED));
         Panel panel = new Panel(new GridLayout(2));
 
         TextBox usernameBox = new TextBox();
@@ -163,9 +172,10 @@ public class LanternaCombat {
                 if (tokenNode != null && usernameNode != null && userIdNode != null) {
                     isLoggedIn = true;
                     jwtToken = tokenNode.asText();
+                    NomUser = usernameNode.asText();
 
                     MessageDialog.showMessageDialog(gui, "Succès",
-                            "Bienvenue " + usernameNode.asText() + " (ID: " + usernameNode.asText() + ")");
+                            "Bienvenue " + usernameNode.asText());
                     window.close();
                     showLoggedInMenu(gui);
                 } else {
@@ -186,11 +196,12 @@ public class LanternaCombat {
 
     private static void showLoggedInMenu(MultiWindowTextGUI gui) {
         BasicWindow window = new BasicWindow("Connecté");
+        window.setHints(List.of(Window.Hint.CENTERED));
         Panel panel = new Panel(new GridLayout(1));
 
         panel.addComponent(new Label("Bienvenue dans DarkTower !"));
 
-        panel.addComponent(new Button("Choisir Personnage", () -> {
+        panel.addComponent(new Button("Jouer", () -> {
             window.close();
             showCharacterSelection(gui);
 
@@ -252,9 +263,8 @@ public class LanternaCombat {
                 currentWindow.close();
                 envoyerChoixPersonnage(characterId, userId, jwtToken);
                 afficherEtChoisirItem(gui, currentWindow, selectedPersonnage, () -> {
-                    BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), selectedPersonnage);
-                    combatWindow.setHints(List.of(Window.Hint.CENTERED));
-                    gui.addWindowAndWait(combatWindow);
+                    currentWindow.close();
+                    showInventaire(gui,selectedPersonnage);
                 });
             });
 
@@ -271,6 +281,106 @@ public class LanternaCombat {
         } else {
             MessageDialog.showMessageDialog(gui, "Erreur", "Personnage non trouvé.");
         }
+    }
+
+    public static void showInventaire(MultiWindowTextGUI gui,Personnage personnage) {
+        BasicWindow window = new BasicWindow("Gestion de l'inventaire - " + NomUser);
+        window.setHints(List.of(Window.Hint.CENTERED));
+        Panel panel = new Panel(new GridLayout(1));
+        panel.addComponent(new Label("=== INVENTAIRE ==="));
+        panel.addComponent(new EmptySpace());
+
+        List<Item> inventaire = chargerInventaire(userId);
+        List<Item> coffre = recupererContenuCoffre(userId);
+
+        if (inventaire.isEmpty()) {
+            panel.addComponent(new Label("Aucun item dans l'inventaire."));
+        } else {
+            panel.addComponent(new Label("--- Items Inventaire ---"));
+            for (Item item : inventaire) {
+                if (item == null) continue;
+                panel.addComponent(new Button(item.getNom(), () -> {
+                    afficherOptionsItem(gui, item, true, window,personnage);
+                }));
+                panel.addComponent(new EmptySpace());
+            }
+        }
+
+        if (coffre != null && !coffre.isEmpty()) {
+            panel.addComponent(new Label("--- Items Coffre ---"));
+            for (Item item : coffre) {
+                if (item == null) continue;
+                panel.addComponent(new Button(item.getNom() + " (Coffre)", () -> {
+                    afficherOptionsItem(gui, item, false, window,personnage);
+                }));
+            }
+        }
+
+        panel.addComponent(new EmptySpace());
+        panel.addComponent(new Button("suivant", () -> {
+            BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), personnage);
+            combatWindow.setHints(List.of(Window.Hint.CENTERED));
+            window.close(); // ferme la fenêtre d'inventaire actuelle
+            gui.addWindowAndWait(combatWindow);
+        }));
+
+        window.setComponent(panel);
+        gui.addWindowAndWait(window);
+    }
+
+    private static void afficherOptionsItem(MultiWindowTextGUI gui, Item item, boolean depuisInventaire, BasicWindow previousWindow,Personnage personnage) {
+        BasicWindow window = new BasicWindow("Actions sur : " + item.getNom());
+        Panel panel = new Panel(new GridLayout(1));
+
+        panel.addComponent(new Label("Que faire avec : " + item.getNom()));
+
+        panel.addComponent(new Button("Supprimer", () -> {
+            if (depuisInventaire) {
+                supprimerItem(item.getId());
+            } else {
+                supprimerItemDuCoffre(item.getId(), userId);
+            }
+            MessageDialog.showMessageDialog(gui, "Suppression", "Item supprimé.");
+            window.close();
+            previousWindow.close();
+            showInventaire(gui,personnage);
+        }));
+
+        if (depuisInventaire) {
+            boolean hasCoffre = hasCoffreInInventory(userId);
+            if (hasCoffre) {
+                panel.addComponent(new Button("Ajouter au coffre", () -> {
+                    boolean success = ajouterItemDansCoffre(item, userId);
+                    if (success) {
+                        supprimerItem(item.getId());
+                        MessageDialog.showMessageDialog(gui, "Succès", "Item déplacé dans le coffre.");
+                    } else {
+                        MessageDialog.showMessageDialog(gui, "Erreur", "Le coffre est plein ou introuvable.");
+                    }
+                    window.close();
+                    previousWindow.close();
+                    showInventaire(gui,personnage);
+                }));
+            }
+        } else {
+            panel.addComponent(new Button("Ajouter à l'inventaire", () -> {
+                boolean ok = ajouterItem(userId,item);
+                if (ok) {
+                    supprimerItemDuCoffre(item.getId(), userId);
+                    MessageDialog.showMessageDialog(gui, "Succès", "Item déplacé dans l'inventaire.");
+                } else {
+                    MessageDialog.showMessageDialog(gui, "Erreur", "Inventaire plein !");
+                }
+                window.close();
+                previousWindow.close();
+                showInventaire(gui,personnage);
+            }));
+        }
+
+        panel.addComponent(new Button("Retour", window::close));
+
+        window.setComponent(panel);
+        gui.addWindowAndWait(window);
     }
 
     public static void afficherEtChoisirItem(
@@ -352,7 +462,10 @@ public class LanternaCombat {
                 lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                 historyPanel, gui, screen, window, mainPanel));
 
-        Button btnQuitter = new Button("Quitter", window::close);
+        Button btnQuitter = new Button("Abondonner ?", () -> {
+            window.close();
+            showLoggedInMenu(gui);
+        });
 
         contentPanel.addComponent(btnAttaquer);
         contentPanel.addComponent(btnItem);
@@ -441,16 +554,11 @@ public class LanternaCombat {
                     }
 
                     // Mise à jour des points de vie dans les objets
-                    System.out.println("PV joueur avant : " + joueur.getPointsDeVie());
-                    System.out.println("PV minotaure avant : " + minotaureActuel.getPointsDeVie());
+                    int pvRecuperer = resultat[0].pointsDeVieRendues() + joueur.getPointsDeVie();
+                    int degatsInfligéMinotaure = minotaureActuel.getPointsDeVie() - resultat[0].degatsInfliges();
 
-// Mise à jour des PV
-                    joueur.setPointsDeVie(resultat[0].pvUtilisateur());
-                    minotaureActuel.setPointsDeVie(resultat[0].pvCible());
-
-                    System.out.println("PV joueur après : " + joueur.getPointsDeVie());
-                    System.out.println("PV minotaure après : " + minotaureActuel.getPointsDeVie());
-
+                    joueur.setPointsDeVie(pvRecuperer);
+                    minotaureActuel.setPointsDeVie(degatsInfligéMinotaure);
 
                     // Mise à jour des labels avec les PV mis à jour
                     lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
@@ -458,13 +566,14 @@ public class LanternaCombat {
 
                     try{sleep(300);}catch (InterruptedException ignored) {}
 
-                    if (joueur.getPointsDeVie() <= 0 || minotaureActuel.getPointsDeVie() <= 0) {
+                    if (minotaureActuel.getPointsDeVie() <= 0) {
                         showEndCombat(gui, joueur, minotaureActuel, etage, tour,
                                 historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                                 window, mainPanel);
                     }
 
                     int degatsMinotaure = minotaureActuel.attaquer(joueur);
+
                     lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
                     historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
 
@@ -501,10 +610,6 @@ public class LanternaCombat {
         gui.addWindowAndWait(itemWindow);
     }
 
-
-
-
-
     private static void showEndCombat(
             MultiWindowTextGUI gui, Personnage joueur, Minotaurus minotaure,
             Etage etage, Tour tour, Panel historyPanel,
@@ -528,8 +633,7 @@ public class LanternaCombat {
                 if (etage.getEtage() < 20) {
                     etage.incrementer();
                     lblEtage.setText("Etage : " + etage.getEtage());
-                    minotaureActuel.setNiveau(etage.getEtage());
-                    minotaureActuel.resetPointsDeVie();
+                    minotaureActuel = new Minotaurus("999", etage.getEtage());
                     tour.resetTour();
                     lblTour.setText("Tour : " + tour.getTour());
                     lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
@@ -539,8 +643,7 @@ public class LanternaCombat {
 
                     afficherEtChoisirItem(gui, window, joueur, () -> {
                         lblEtage.setText("Etage : " + etage.getEtage());
-                        minotaureActuel.setNiveau(etage.getEtage());
-                        minotaureActuel.resetPointsDeVie();
+                        minotaureActuel = new Minotaurus("999", etage.getEtage());
                         lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
 
                         tour.resetTour();
@@ -552,6 +655,7 @@ public class LanternaCombat {
                         updateGui(gui);
 
                         window.setComponent(mainPanel);
+                        showInventaire(gui,joueur);
                     });
 
                 } else {
@@ -574,8 +678,7 @@ public class LanternaCombat {
         historyPanel.addComponent(new Label("Début du combat"));
 
         etageActuel = new Etage(1);
-        minotaureActuel.setNiveau(etage.getEtage());
-        minotaureActuel.resetPointsDeVie(); // Réinitialise les PV du Minotaure
+        minotaureActuel = new Minotaurus("999", etage.getEtage()); // Réinitialise les PV du Minotaure
         joueur.resetPointDeVie(); // Réinitialise les PV du joueur
         tour.resetTour();
 
@@ -631,6 +734,63 @@ public class LanternaCombat {
             return new ArrayList<>();
         }
     }
+    private static List<Item> recupererContenuCoffre(int idPersonnage) {
+        try {
+            String url = "http://localhost:8080/inventaire/" + idPersonnage + "/coffre";
+            String response = sendRequest(url, "GET", null, jwtToken);
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(response, new TypeReference<List<Item>>() {});
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la récupération du contenu du coffre : " + e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+
+    private static boolean ajouterItemDansCoffre(Item item, int idPersonnage) {
+        try {
+            String url = "http://localhost:8080/inventaire/" + idPersonnage + "/coffre/ajouter";
+            ObjectMapper mapper = new ObjectMapper();
+            String body = mapper.writeValueAsString(item);
+            String response = sendRequest(url, "POST", body, jwtToken);
+            return response.contains("succès");
+        } catch (Exception e) {
+            System.err.println("Erreur lors de l'ajout de l'item dans le coffre : " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static boolean supprimerItemDuCoffre(String itemId, int idPersonnage) {
+        try {
+            String url = "http://localhost:8080/inventaire/" + idPersonnage + "/coffre/" + itemId;
+            String response = sendRequest(url, "DELETE", null, jwtToken);
+            return response.contains("succès");
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la suppression de l'item du coffre : " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static boolean supprimerItem(String itemId) {
+        try {
+            String url = "http://localhost:8080/inventaire/item/" + itemId;
+            String response = sendRequest(url, "DELETE", null, jwtToken);
+            return response.contains("succès");
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la suppression de l'item : " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static boolean hasCoffreInInventory(int idPersonnage) {
+        try {
+            String url = "http://localhost:8080/inventaire/coffre/existe/" + idPersonnage;
+            String response = sendRequest(url, "GET", null, jwtToken);
+            return Boolean.parseBoolean(response);
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la vérification de la présence d'un coffre : " + e.getMessage());
+            return false;
+        }
+    }
 
     private static String sendRequest(String urlString, String method, String body, String token) throws Exception {
         URL url = new URL(urlString);
@@ -682,56 +842,39 @@ public class LanternaCombat {
         }
     }
 
-
     public static UseItemResult callUseItemAPI(String joueurId, String itemId, String cibleId) {
         try {
-            // Encoder les parties dynamiques de l'URL
-            String encodedJoueurId = URLEncoder.encode(joueurId, StandardCharsets.UTF_8.toString());
+            String encodedJoueurId = URLEncoder.encode(joueurId, StandardCharsets.UTF_8);
             String urlString = "http://localhost:8080/Combat/" + encodedJoueurId + "/use-item";
-            URL url = new URL(urlString);
 
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/json");
-            connection.setRequestProperty("Authorization", "Bearer " + jwtToken);
-            connection.setDoOutput(true);
-
-            // Construire le JSON
             JSONObject requestBody = new JSONObject();
             requestBody.put("itemId", itemId);
             if (cibleId != null) {
                 requestBody.put("cibleId", cibleId);
             }
 
-            System.out.println("Données envoyées : " + requestBody.toString());
+            HttpClient client = HttpClient.newHttpClient();
 
-            try (OutputStream os = connection.getOutputStream()) {
-                os.write(requestBody.toString().getBytes("utf-8"));
-            }
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(urlString))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
+                    .build();
 
-            int status = connection.getResponseCode();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            int status = response.statusCode();
+
             if (status == 200) {
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream(), "utf-8"))) {
-                    StringBuilder response = new StringBuilder();
-                    String responseLine;
-                    while ((responseLine = br.readLine()) != null) {
-                        response.append(responseLine.trim());
-                    }
+                String responseBody = response.body();
+                System.out.println("Réponse de l'API : " + responseBody);
 
-                    System.out.println("Réponse de l'API : " + response.toString());
-                    ObjectMapper mapper = new ObjectMapper();
-                    return mapper.readValue(response.toString(), UseItemResult.class);
-                }
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(responseBody, UseItemResult.class);
             } else {
                 System.err.println("Erreur API: " + status);
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getErrorStream(), "utf-8"))) {
-                    StringBuilder errorResponse = new StringBuilder();
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        errorResponse.append(line.trim());
-                    }
-                    System.err.println("Détails de l'erreur : " + errorResponse);
-                }
+                System.err.println("Détails de l'erreur : " + response.body());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -739,10 +882,6 @@ public class LanternaCombat {
 
         return new UseItemResult("Erreur lors de l'utilisation de l'objet.", 0, 0, null);
     }
-
-
-
-
 
     public static void envoyerChoixPersonnage(String characterId, int userId, String jwtToken) {
         try {
@@ -788,10 +927,9 @@ public class LanternaCombat {
 
         return passifsMessage.toString();
     }
+
     public static Minotaurus getMinotaurusActuel() {
-        if (minotaureActuel == null) {
-            minotaureActuel = new Minotaurus("999", etageActuel.getEtage());
-        }
+
         return minotaureActuel;
     }
 

@@ -1,5 +1,6 @@
 package be.helha.projets.projetdarktower;
 
+import be.helha.projets.projetdarktower.Model.FistFire;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.lanterna.TerminalSize;
@@ -18,7 +19,7 @@ public class MainLanterna {
 
     private static String jwtToken = null;
     private static boolean isLoggedIn = false;
-    private static int userId = 0;
+    private static int userId ;
 
     public static void main(String[] args) {
         try {
@@ -144,6 +145,7 @@ public class MainLanterna {
 
                 if (tokenNode != null && usernameNode != null && userIdNode != null) {
                     isLoggedIn = true;
+                    userId = userIdNode.asInt();  // Assurez-vous que userId est un entier
                     jwtToken = tokenNode.asText();
 
                     MessageDialog.showMessageDialog(gui, "Succès",
@@ -179,8 +181,9 @@ public class MainLanterna {
 
         // Ajouter un bouton pour gérer l'inventaire
         panel.addComponent(new Button("Gérer l'inventaire", () -> {
+            FistFire fistFire = new FistFire("1");
             window.close();  // Ferme la fenêtre actuelle
-            LanternaInventaireManager inventaireManager = new LanternaInventaireManager(gui, userId); // Passe userId ici
+            LanternaInventaireManager inventaireManager = new LanternaInventaireManager(gui, fistFire ); // Passe userId ici
             inventaireManager.show();  // Affiche la gestion de l'inventaire
         }));
 
