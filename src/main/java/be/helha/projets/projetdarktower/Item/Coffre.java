@@ -16,6 +16,11 @@ public class Coffre extends Item {
         this.type = "Coffre";
         this.contenu = new ArrayList<>();
     }
+    public Coffre() {
+        super();
+        this.type = "Coffre";
+        this.contenu = new ArrayList<>();
+    }
 
     public boolean ajouterItem(Item item) {
         if (contenu.size() >= CAPACITE_MAX) return false;

@@ -10,6 +10,10 @@ public class Potion extends Item {
         this.pointsDeVieRecuperes = PointsDeVieRecuperes;
         this.usages = usages;
     }
+    public Potion() {
+        super();
+        this.type = "Potion";
+    }
 
     public int getPointsDeVieRecuperes() {
         return pointsDeVieRecuperes;

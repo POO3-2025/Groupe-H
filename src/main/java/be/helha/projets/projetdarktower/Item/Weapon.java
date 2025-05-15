@@ -10,6 +10,10 @@ public class Weapon extends Item {
         this.degats = degats;
         this.usages = usages;
     }
+    public Weapon() {
+        super();
+        this.type = "Weapon";
+    }
 
     public int getDegats() {
         return degats;

@@ -1,7 +1,46 @@
 {
   "db": {
-    "url": "jdbc:mysql://localhost:3306/ProjetDarkTower",
-    "username": "root",
-    "password": ""
+    "mysqlproduction": {
+      "BDCredentials": {
+        "DBType": "mysql",
+        "HostName": "localhost",
+        "UserName": "root",
+        "Port": "3306",
+        "Password": "",
+        "DBName": "projetdarktower"
+      }
+    },
+    "mysqltest": {
+      "BDCredentials": {
+        "DBType": "mysql",
+        "HostName": "localhost",
+        "Port": "3306",
+        "UserName": "root",
+        "Password": "",
+        "DBName": "mysqltest"
+      }
+    },
+    "MongoDBProduction": {
+      "ConnectionType": "NoSQL",
+      "DBType": "mongodb",
+      "BDCredentials": {
+        "HostName": "localhost",
+        "Port": "27017",
+        "UserName": "admin",
+        "Password": "1234",
+        "DBName": "Game"
+      }
+    },
+    "MongoDBTest": {
+      "ConnectionType": "NoSQL",
+      "DBType": "mongodb",
+      "BDCredentials": {
+        "HostName": "localhost",
+        "Port": "27017",
+        "UserName": "admin",
+        "Password": "1234",
+        "DBName": "MongoDBTest"
+      }
+    }
   }
 }
