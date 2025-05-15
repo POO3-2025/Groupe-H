@@ -1,5 +1,6 @@
 package be.helha.projets.projetdarktower.Inventaire;
 
+import be.helha.projets.projetdarktower.DBConnection.DatabaseConnection;
 import be.helha.projets.projetdarktower.DTO.UseItemResult;
 import be.helha.projets.projetdarktower.Item.Weapon;
 import be.helha.projets.projetdarktower.Item.Item;
@@ -25,8 +26,15 @@ public class InventaireDAOImpl implements InventaireDAO {
     private final MongoCollection<Document> collection;
 
     public InventaireDAOImpl() {
-        MongoClient client = MongoClients.create("mongodb://localhost:27017");
-        MongoDatabase database = client.getDatabase("Game");
+        // Utiliser DatabaseConnection singleton pour obtenir MongoDatabase
+        DatabaseConnection dbConn = DatabaseConnection.getInstance();
+        MongoDatabase database;
+        try {
+            database = dbConn.getMongoDatabase("MongoDBProduction");
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Impossible de se connecter à MongoDB: " + e.getMessage());
+        }
+
         this.collection = database.getCollection("Inventaire");
     }
 

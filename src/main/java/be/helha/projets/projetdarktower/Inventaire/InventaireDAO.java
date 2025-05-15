@@ -18,6 +18,8 @@ public interface InventaireDAO {
 
     void initialiserInventaireVide(int idPersonnage);
 
+    void viderInventaire(int idPersonnage);
+
     String DeleteItem(String itemId);
 
     UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible);
