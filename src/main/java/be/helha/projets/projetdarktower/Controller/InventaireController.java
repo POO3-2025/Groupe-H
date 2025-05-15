@@ -70,7 +70,7 @@ public class InventaireController {
     }
 
     @GetMapping("/coffre/existe/{userId}")
-    public ResponseEntity<Boolean> possedeCoffre(@PathVariable String userId) {
+    public ResponseEntity<Boolean> possedeCoffre(@PathVariable int userId) {
         boolean existe = itemService.possedeCoffre(userId);
         return ResponseEntity.ok(existe);
     }
