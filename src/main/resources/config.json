@@ -26,8 +26,8 @@
       "BDCredentials": {
         "HostName": "localhost",
         "Port": "27017",
-        "UserName": "admin",
-        "Password": "1234",
+        "UserName": "",
+        "Password": "",
         "DBName": "Game"
       }
     },
@@ -37,8 +37,8 @@
       "BDCredentials": {
         "HostName": "localhost",
         "Port": "27017",
-        "UserName": "admin",
-        "Password": "1234",
+        "UserName": "",
+        "Password": "",
         "DBName": "MongoDBTest"
       }
     }

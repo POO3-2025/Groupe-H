@@ -1,49 +1,24 @@
 package be.helha.projets.projetdarktower.Repository;
 
 import be.helha.projets.projetdarktower.Model.User;
-import org.json.JSONObject;
+import be.helha.projets.projetdarktower.DBConnection.DatabaseConnection;
 import org.springframework.stereotype.Repository;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 @Repository
 public class UserRepository {
 
-    private static String URL;
-    private static String USER;
-    private static String PASSWORD;
-
-    static {
-        try {
-            // Charger le fichier config.json
-            FileReader reader = new FileReader("src/main/resources/static/config.json");
-            StringBuilder jsonContent = new StringBuilder();
-            int i;
-            while ((i = reader.read()) != -1) {
-                jsonContent.append((char) i);
-            }
-            reader.close();
-
-            // Analyser le JSON
-            JSONObject config = new JSONObject(jsonContent.toString());
-            JSONObject dbConfig = config.getJSONObject("db");
-
-            // Récupérer les informations de connexion à la base de données
-            URL = dbConfig.getString("url");
-            USER = dbConfig.getString("username");
-            PASSWORD = dbConfig.getString("password");
-
-        } catch (IOException e) {
-            System.err.println("Erreur lors de la lecture du fichier config.json : " + e.getMessage());
-        }
-    }
+    // Clé config pour la connexion SQL, peut être 'mysqlproduction' ou autre selon config JSON
+    private static final String DB_KEY = "mysqlproduction";
 
     public void save(User user) {
         String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
 
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(DB_KEY);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, user.getUsername());
@@ -58,7 +33,7 @@ public class UserRepository {
     public User findByUsername(String username) {
         String sql = "SELECT * FROM users WHERE username = ?";
 
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(DB_KEY);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
@@ -82,7 +57,7 @@ public class UserRepository {
     public boolean existsByUsername(String username) {
         String sql = "SELECT COUNT(*) FROM users WHERE username = ?";
 
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(DB_KEY);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
