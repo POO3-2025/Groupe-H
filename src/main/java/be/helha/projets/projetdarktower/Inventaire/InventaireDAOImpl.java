@@ -128,16 +128,12 @@ public class InventaireDAOImpl implements InventaireDAO {
     public Item recupererItemParId(String itemId) {
         System.out.println("Recherche de l'item avec l'ID : " + itemId);
 
-        // Trouver le document Inventaire qui contient l'item avec cet _id
-        Document match = collection.find(
-                new Document("items._id", itemId)
-        ).first();
+        Document match = collection.find(new Document("items._id", itemId)).first();
 
         if (match != null) {
-            // Parcours de la liste des items pour récupérer celui avec le bon ID
             List<Document> items = (List<Document>) match.get("items");
             for (Document doc : items) {
-                if (itemId.equals(doc.getString("_id"))) {
+                if (doc != null && itemId.equals(doc.getString("_id"))) { // Vérifie que l'item n'est pas null
                     String nom = doc.getString("nom");
                     Item item = ItemFactory.creerItem(nom);
                     item.setId(doc.getString("_id"));
@@ -187,18 +183,18 @@ public class InventaireDAOImpl implements InventaireDAO {
     }
 
     //MAJ LA DB APRES CHAQUE UTILISATION
+    // Dans la méthode `UseItem` de la classe `InventaireDAOImpl`
     private void decrementUsageInMongo(String itemId) {
         Document filter = new Document("items._id", itemId);
 
-        Document update = new Document("$inc",
-                new Document("items.$[elem].Usage_Time", -1));
+        // Décrémentation de l'usage de l'item
+        Document update = new Document("$inc", new Document("items.$[elem].Usage_Time", -1));
 
-        List<Bson> arrayFilters = List.of(
-                Filters.eq("elem._id", itemId)
-        );
+        List<Bson> arrayFilters = List.of(Filters.eq("elem._id", itemId));
 
         UpdateOptions options = new UpdateOptions().arrayFilters(arrayFilters);
 
+        // Appliquer la mise à jour dans MongoDB
         collection.updateOne(filter, update, options);
     }
 
@@ -206,63 +202,73 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
 
+
     // Méthode d'utilisation d'un item (Potion, Weapon, etc.)
+
+    @Override
     public UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible) {
         String message;
         String itemSupprimeId = null;
 
-        if (item instanceof Weapon) {
-            Weapon weapon = (Weapon) item;
-
-            if (cible != null) {
-                int degats = weapon.getDegats();
-                int vieRestante = cible.getPointsDeVie() - degats;
-                cible.setPointsDeVie(vieRestante);
-
-                decrementUsageInMongo(weapon.getId());
-
-                int durabilite = RecupererUsageItem(weapon.getId());
-                if (durabilite <= 0) {
-                    DeleteItem(weapon.getId());
-                    itemSupprimeId = weapon.getId();
-                }
-
-                message = "L'utilisateur " + utilisateur.getNom() + " attaque la cible " + cible.getNom() + " avec l'épée " + weapon.getNom() + " infligeant " + degats + " dégâts.";
-            } else {
-                message = "Cible non spécifiée pour l'attaque.";
-            }
-        } else if (item instanceof Potion) {
+        if (item instanceof Potion) {
+            System.out.println("cible pv" + cible.getPointsDeVie());
             Potion potion = (Potion) item;
+            int pointsRecuperes = potion.getPointsDeVieRecuperes();
+            int nouvelleVie = utilisateur.getPointsDeVie() + pointsRecuperes;
+            utilisateur.setPointsDeVie(nouvelleVie);  // Mise à jour des PV du joueur
 
-            int pointsDeVie = potion.getPointsDeVieRecuperes() + utilisateur.getPointsDeVie();
-            utilisateur.setPointsDeVie(pointsDeVie);
+            message = "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() +
+                    " et récupère " + pointsRecuperes + " points de vie.";
+            itemSupprimeId = item.getId();
 
-            decrementUsageInMongo(potion.getId());
-            int durabilite = RecupererUsageItem(potion.getId());
-
-            if (durabilite <= 0) {
-                DeleteItem(potion.getId());
-                itemSupprimeId = potion.getId();
-            }
-
-            message = "L'utilisateur " + utilisateur.getNom() + " utilise la potion " + potion.getNom() + " et récupère " + potion.getPointsDeVieRecuperes() + " points de vie.";
-        } else {
-            message = "Cet objet ne peut pas être utilisé.";
+            // Supprimer l'item après utilisation
+            DeleteItem(item.getId());
+            System.out.println("cible pv" + cible.getPointsDeVie());
+            // Retourne les PV actuels de la cible sans modifier les PV du Minotaure
+            return new UseItemResult(message, utilisateur.getPointsDeVie(),
+                    (cible != null ? cible.getPointsDeVie() : -1), itemSupprimeId);
         }
 
-        return new UseItemResult(
-                message,
-                utilisateur.getPointsDeVie(),
-                cible != null ? cible.getPointsDeVie() : -1,
-                itemSupprimeId
-        );
+        if (item instanceof Weapon) {
+            Weapon weapon = (Weapon) item;
+            if (cible != null) {
+                int degats = weapon.getDegats();
+                int nouvelleVieCible = Math.max(0, cible.getPointsDeVie() - degats);
+                cible.setPointsDeVie(nouvelleVieCible);
+
+                message = "L'utilisateur " + utilisateur.getNom() + " attaque " + cible.getNom() +
+                        " avec " + weapon.getNom() + " et inflige " + degats + " dégâts.";
+                itemSupprimeId = null;
+
+                // Décrémenter la durabilité de l'arme
+                decrementUsageInMongo(item.getId());
+                int usages = RecupererUsageItem(item.getId());
+                weapon.setUsages(weapon.getUsages() - 1); // Mise à jour locale des usages
+
+                // Vérifie si les usages sont à 0 et supprime l'item
+                if (usages <= 0) {
+                    DeleteItem(item.getId());
+                    itemSupprimeId = item.getId(); // Indique que l'item a été supprimé
+                    message += " L'arme " + weapon.getNom() + " est cassée et a été supprimée.";
+                }
+            } else {
+                message = "Aucune cible spécifiée pour l'attaque.";
+            }
+
+            return new UseItemResult(message, utilisateur.getPointsDeVie(),
+                    (cible != null ? cible.getPointsDeVie() : -1), itemSupprimeId);
+        }
+
+        return new UseItemResult("Type d'item non supporté.", utilisateur.getPointsDeVie(),
+                (cible != null ? cible.getPointsDeVie() : -1), null);
     }
+
     private int RecupererUsageItem(String itemId) {
         Document inventory = collection.find(new Document("items._id", itemId)).first();
         if (inventory != null) {
             List<Document> items = (List<Document>) inventory.get("items");
             for (Document item : items) {
-                if (itemId.equals(item.getString("_id"))) {
+                if (item != null && itemId.equals(item.getString("_id"))) { // Vérifie que l'item n'est pas null
                     return item.getInteger("Usage_Time", 0);
                 }
             }
@@ -292,6 +298,19 @@ public class InventaireDAOImpl implements InventaireDAO {
         System.out.println("Inventaire vide initialisé pour le personnage " + idPersonnage);
     }
 
+    public void viderInventaire(int idPersonnage) {
+        Document query = new Document("idPersonnage", idPersonnage);
+        Document existing = collection.find(query).first();
+
+        if (existing == null) {
+            System.out.println("Aucun inventaire trouvé pour le personnage " + idPersonnage);
+            return;
+        }
+
+        Document update = new Document("$set", new Document("items", Collections.nCopies(10, null)));
+        collection.updateOne(query, update);
+        System.out.println("Inventaire vidé pour le personnage " + idPersonnage);
+    }
 
 
     // Convertit un item en document MongoDB pour l'insertion

@@ -24,6 +24,8 @@ public class CombatController {
     @PostMapping("/{id}/use-item")
     public ResponseEntity<UseItemResult> useItem(@PathVariable String id, @RequestBody @Valid ItemSelectionRequest request) {
         // Récupération du personnage utilisateur
+        System.out.println("ID du joueur reçu : " + id);
+
         Personnage utilisateur = characterService.selectCharacter(id);
         if (utilisateur == null) {
             return ResponseEntity.status(404).body(new UseItemResult("Personnage utilisateur non trouvé.", 0, 0, null));
@@ -46,7 +48,7 @@ public class CombatController {
 
         // Utilisation de l'item
         UseItemResult resultat = itemService.utiliserItem(item, utilisateur, cible);
-
+        System.out.println("Résultat de l'utilisation de l'item : " + resultat);
         // Retourne le résultat avec les informations mises à jour
         return ResponseEntity.ok(resultat);
     }
