@@ -3,7 +3,6 @@ package be.helha.projets.projetdarktower.Service;
 import be.helha.projets.projetdarktower.DTO.UseItemResult;
 import be.helha.projets.projetdarktower.Inventaire.InventaireDAOImpl;
 import be.helha.projets.projetdarktower.Item.Item;
-import be.helha.projets.projetdarktower.Model.Personnage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +18,14 @@ public class ItemService {
         this.inventaireDAO = inventaireDAO;
     }
 
+    public void viderInventaire(int idPersonnage) {
+        inventaireDAO.viderInventaire(idPersonnage);
+    }
+
+    public void initialiserInventaire(int idPersonnage) {
+        inventaireDAO.initialiserInventaireVide(idPersonnage);
+    }
+
     public boolean ajouterItem(Item item, int idPersonnage) {
         return inventaireDAO.ajouterItem(item, idPersonnage);
     }
@@ -31,17 +38,12 @@ public class ItemService {
         return inventaireDAO.recupererItemParId(itemId);
     }
 
-    public UseItemResult utiliserItem(Item item, Personnage utilisateur, Personnage cible) {
+    public UseItemResult utiliserItem(Item item, be.helha.projets.projetdarktower.Model.Personnage utilisateur, be.helha.projets.projetdarktower.Model.Personnage cible) {
         return inventaireDAO.UseItem(item, utilisateur, cible);
     }
 
-
     public String supprimerItem(String itemId) {
         return inventaireDAO.DeleteItem(itemId);
-    }
-
-    public void initialiserInventaire(int idPersonnage) {
-        inventaireDAO.initialiserInventaireVide(idPersonnage);
     }
 
     public boolean possedeCoffre(String userId) {

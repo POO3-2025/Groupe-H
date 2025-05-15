@@ -6,6 +6,7 @@ import be.helha.projets.projetdarktower.Item.Item;
 import be.helha.projets.projetdarktower.Item.ItemFactory;
 import be.helha.projets.projetdarktower.Item.Potion;
 import be.helha.projets.projetdarktower.Model.*;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.googlecode.lanterna.TerminalSize;
@@ -38,7 +39,6 @@ public class LanternaCombat {
     public static Minotaurus minotaureActuel = new Minotaurus("999", etageActuel.getEtage());
 
     private static final CharacterService characterService = new CharacterService();
-    public static InventaireDAOImpl inventaireDAO = new InventaireDAOImpl();
 
     public static void main(String[] args) {
         try {
@@ -248,7 +248,7 @@ public class LanternaCombat {
             }
 
             Button BtnItem = new Button("suivant", () -> {
-                inventaireDAO.viderInventaire(userId);
+                viderInventaire(userId);
                 currentWindow.close();
                 envoyerChoixPersonnage(characterId, userId, jwtToken);
                 afficherEtChoisirItem(gui, currentWindow, selectedPersonnage, () -> {
@@ -277,7 +277,7 @@ public class LanternaCombat {
             MultiWindowTextGUI gui, BasicWindow parentWindow,
             Personnage selectedPersonnage, Runnable onItemChosen
     ) {
-        inventaireDAO.initialiserInventaireVide(userId);
+        initialiserInventaire(userId);
         List<Item> stock = new ArrayList<>(ItemFactory.getAllItems().values());
         List<Item> itemsChoisis = new ArrayList<>();
         List<Item> stockAvecOccurrences = new ArrayList<>();
@@ -301,7 +301,7 @@ public class LanternaCombat {
             String itemNom = item.getNom();
             Button itemButton = new Button(itemNom, () -> {
                 try {
-                    boolean plein = inventaireDAO.ajouterItem(item, userId);
+                    boolean plein = ajouterItem(userId,item);
                     if (plein) {
                         MessageDialog.showMessageDialog(gui, "Succès", "L'item " + itemNom + " a été ajouté.");
                     } else {
@@ -420,7 +420,7 @@ public class LanternaCombat {
         itemWindow.setHints(List.of(Window.Hint.CENTERED));
         Panel panel = new Panel(new LinearLayout(Direction.VERTICAL));
 
-        List<Item> inventaire = inventaireDAO.chargerInventaire(userId);
+        List<Item> inventaire = chargerInventaire(userId);
 
         if (inventaire.isEmpty()) {
             MessageDialog.showMessageDialog(gui, "Inventaire vide", "Vous n'avez aucun objet à utiliser.");
@@ -582,7 +582,7 @@ public class LanternaCombat {
         lblTour.setText("Tour : " + tour.getTour());
         lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
         lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
-        inventaireDAO.viderInventaire(userId);
+        viderInventaire(userId);
     }
 
     private static void updateGui(MultiWindowTextGUI gui) {
@@ -590,6 +590,45 @@ public class LanternaCombat {
             gui.updateScreen();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void viderInventaire(int idPersonnage) {
+        try {
+            sendRequest("http://localhost:8080/inventaire/" + idPersonnage + "/vider", "POST", null, jwtToken);
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la vidange de l'inventaire : " + e.getMessage());
+        }
+    }
+
+    private static void initialiserInventaire(int idPersonnage) {
+        try {
+            sendRequest("http://localhost:8080/inventaire/" + idPersonnage + "/initialiser", "POST", null, jwtToken);
+        } catch (Exception e) {
+            System.err.println("Erreur lors de l'initialisation de l'inventaire : " + e.getMessage());
+        }
+    }
+
+    private static boolean ajouterItem(int idPersonnage, Item item) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String json = mapper.writeValueAsString(item);
+            String response = sendRequest("http://localhost:8080/inventaire/" + idPersonnage + "/ajouter", "POST", json, jwtToken);
+            return response.contains("succès");
+        } catch (Exception e) {
+            System.err.println("Erreur lors de l'ajout de l'item : " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static List<Item> chargerInventaire(int idPersonnage) {
+        try {
+            String response = sendRequest("http://localhost:8080/inventaire/" + idPersonnage + "/charger", "GET", null, jwtToken);
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(response, new TypeReference<List<Item>>() {});
+        } catch (Exception e) {
+            System.err.println("Erreur lors du chargement de l'inventaire : " + e.getMessage());
+            return new ArrayList<>();
         }
     }
 
@@ -627,6 +666,7 @@ public class LanternaCombat {
             return response.toString();
         }
     }
+
     private static Personnage createCharacter(String characterId) {
         switch (characterId) {
             case "1":
