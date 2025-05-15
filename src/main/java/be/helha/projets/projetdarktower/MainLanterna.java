@@ -177,6 +177,13 @@ public class MainLanterna {
 
         panel.addComponent(new Label("Bienvenue dans DarkTower !"));
 
+        // Ajouter un bouton pour gérer l'inventaire
+        panel.addComponent(new Button("Gérer l'inventaire", () -> {
+            window.close();  // Ferme la fenêtre actuelle
+            LanternaInventaireManager inventaireManager = new LanternaInventaireManager(gui, userId); // Passe userId ici
+            inventaireManager.show();  // Affiche la gestion de l'inventaire
+        }));
+
         panel.addComponent(new Button("Déconnexion", () -> {
             isLoggedIn = false;
             jwtToken = null;
@@ -196,6 +203,7 @@ public class MainLanterna {
         window.setComponent(panel);
         gui.addWindowAndWait(window);
     }
+
 
     private static String sendRequest(String urlString, String method, String body, String token) throws Exception {
         URL url = new URL(urlString);

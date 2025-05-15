@@ -336,5 +336,81 @@ public class InventaireDAOImpl implements InventaireDAO {
 
         return doc;
     }
+    public List<Item> recupererContenuCoffre(int idPersonnage) {
+        Document query = new Document("idPersonnage", idPersonnage);
+        Document inventaireDoc = collection.find(query).first();
+
+        if (inventaireDoc == null) return new ArrayList<>();
+
+        List<Document> items = (List<Document>) inventaireDoc.get("items");
+        for (Document item : items) {
+            if (item != null && "Coffre".equals(item.getString("type"))) {
+                List<Item> contenu = new ArrayList<>();
+                List<Object> rawContenu = (List<Object>) item.get("contenu");
+                if (rawContenu == null) continue;
+                for (Object obj : rawContenu) {
+                    if (obj instanceof Document doc) {
+                        String nom = doc.getString("nom");
+                        Item it = ItemFactory.creerItem(nom);
+                        it.setId(doc.getString("_id"));
+                        contenu.add(it);
+                    }
+                }
+                return contenu;
+            }
+        }
+
+        return new ArrayList<>();
+    }
+    public boolean ajouterItemDansCoffre(Item item, int idPersonnage) {
+        Document query = new Document("idPersonnage", idPersonnage);
+        Document inventaireDoc = collection.find(query).first();
+
+        if (inventaireDoc == null) return false;
+
+        List<Document> items = (List<Document>) inventaireDoc.get("items");
+
+        for (Document doc : items) {
+            if (doc != null && "Coffre".equals(doc.getString("type"))) {
+                List<Object> contenu = (List<Object>) doc.get("contenu");
+                for (int i = 0; i < contenu.size(); i++) {
+                    if (contenu.get(i) == null) {
+                        contenu.set(i, toDocument(item));
+                        collection.updateOne(query, new Document("$set", new Document("items", items)));
+                        return true;
+                    }
+                }
+                return false; // Pas de place
+            }
+        }
+
+        return false; // Pas de coffre
+    }
+    public boolean supprimerItemDuCoffre(String itemId, int idPersonnage) {
+        Document query = new Document("idPersonnage", idPersonnage);
+        Document inventaireDoc = collection.find(query).first();
+
+        if (inventaireDoc == null) return false;
+
+        List<Document> items = (List<Document>) inventaireDoc.get("items");
+
+        for (Document doc : items) {
+            if (doc != null && "Coffre".equals(doc.getString("type"))) {
+                List<Object> contenu = (List<Object>) doc.get("contenu");
+                for (int i = 0; i < contenu.size(); i++) {
+                    Object obj = contenu.get(i);
+                    if (obj instanceof Document docItem && itemId.equals(docItem.getString("_id"))) {
+                        contenu.set(i, null);
+                        collection.updateOne(query, new Document("$set", new Document("items", items)));
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+
 
 }
