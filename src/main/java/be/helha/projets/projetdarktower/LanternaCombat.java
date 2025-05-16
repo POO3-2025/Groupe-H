@@ -318,10 +318,9 @@ public class LanternaCombat {
             panel.addComponent(new Label("--- Items Inventaire ---"));
             for (Item item : inventaire) {
                 if (item == null) continue;
-                panel.addComponent(new Button(item.getNom(), () -> {
+                panel.addComponent(new Button("- " + item.getNom(), () -> {
                     afficherOptionsItem(gui, item, true, window,personnage);
                 }));
-                panel.addComponent(new EmptySpace());
             }
         }
 
@@ -776,6 +775,7 @@ public class LanternaCombat {
                     minotaureActuel = new Minotaurus("999", etage.getEtage());
                     tour.resetTour();
                     lblTour.setText("Tour : " + tour.getTour());
+                    joueur.resetPointDeVie();
                     lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
                     historyPanel.removeAllComponents();
                     historyPanel.addComponent(new Label("Début du combat"));
