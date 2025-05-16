@@ -116,5 +116,27 @@ public class MainLanternaCharacterMenu {
         detailWindow.setComponent(panel);
         gui.addWindowAndWait(detailWindow);
     }
+    private static void showInventory(WindowBasedTextGUI gui) {
+        BasicWindow inventoryWindow = new BasicWindow("Inventaire");
+
+        Panel panel = new Panel(new GridLayout(1));
+        panel.addComponent(new Label("=== Inventaire de l'utilisateur ==="));
+
+        // Exemple d'objets, à remplacer par un vrai service si nécessaire
+        panel.addComponent(new Label("- Potion de soin"));
+        panel.addComponent(new Label("- Épée rouillée"));
+        panel.addComponent(new Label("- Parchemin de feu"));
+
+        panel.addComponent(new EmptySpace());
+
+        panel.addComponent(new Button("Retour", () -> {
+            inventoryWindow.close();
+            showMainMenu(gui);
+        }));
+
+        inventoryWindow.setComponent(panel);
+        gui.addWindowAndWait(inventoryWindow);
+    }
+
 
 }
