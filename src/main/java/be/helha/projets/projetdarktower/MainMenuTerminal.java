@@ -25,7 +25,7 @@ public class MainMenuTerminal {
 
             switch (choice) {
                 case 1:
-                    System.out.println("Selectionnez un personnage ( 1 = fistfire, 2 = waterwa, 3 = jowind, 4 = twod):");
+                    System.out.println("Selectionnez un personnage ( 1 ) fistfire, 2 ) waterwa, 3 ) jowind, 4 ) twood):");
                     String characterId = scanner.nextLine();
                     CharacterSelectionRequest request = new CharacterSelectionRequest();
                     request.setUserId(userId);
