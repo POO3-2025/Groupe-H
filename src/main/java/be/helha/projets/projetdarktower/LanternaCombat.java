@@ -2,9 +2,7 @@ package be.helha.projets.projetdarktower;
 
 import be.helha.projets.projetdarktower.DTO.UseItemResult;
 import be.helha.projets.projetdarktower.Inventaire.InventaireDAOImpl;
-import be.helha.projets.projetdarktower.Item.Item;
-import be.helha.projets.projetdarktower.Item.ItemFactory;
-import be.helha.projets.projetdarktower.Item.Potion;
+import be.helha.projets.projetdarktower.Item.*;
 import be.helha.projets.projetdarktower.Model.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -348,6 +346,7 @@ public class LanternaCombat {
 
         if (depuisInventaire) {
             boolean hasCoffre = hasCoffreInInventory(userId);
+            System.out.println("DEBUG: hasCoffreInInventory(" + userId + ") = " + hasCoffre);
             if (hasCoffre) {
                 panel.addComponent(new Button("Ajouter au coffre", () -> {
                     boolean success = ajouterItemDansCoffre(item, userId);
@@ -543,56 +542,143 @@ public class LanternaCombat {
         for (Item item : inventaire) {
             String nomItem = item.getNom();
 
-            UseItemResult[] resultat = new UseItemResult[1];
-
             Button itemButton = new Button(nomItem, () -> {
                 try {
-                    if (item instanceof Potion) {
-                        resultat[0] = callUseItemAPI(joueur.getId(), item.getId(), getMinotaurusActuel().getId());
+                    if (item instanceof Potion || item instanceof Weapon) {
+                        // Appel API pour utiliser potion ou arme
+                        UseItemResult resultat = callUseItemAPI(joueur.getId(), item.getId(), getMinotaurusActuel().getId());
+
+                        // Mise à jour des PV joueur et minotaure
+                        int pvRecuperer = resultat.pointsDeVieRendues() + joueur.getPointsDeVie();
+                        int degatsInfligeMinotaure = minotaureActuel.getPointsDeVie() - resultat.degatsInfliges();
+
+                        joueur.setPointsDeVie(pvRecuperer);
+                        minotaureActuel.setPointsDeVie(degatsInfligeMinotaure);
+
+                        // Mise à jour des labels
+                        lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                        lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
+
+                        try { Thread.sleep(300); } catch (InterruptedException ignored) {}
+
+                        if (minotaureActuel.getPointsDeVie() <= 0) {
+                            showEndCombat(gui, joueur, minotaureActuel, etage, tour,
+                                    historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
+                                    window, mainPanel);
+                        }
+
+                        int degatsMinotaure = minotaureActuel.attaquer(joueur);
+                        lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                        historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégâts"));
+
+                        tour.incrementer();
+                        lblTour.setText("Tour : " + tour.getTour());
+
+                        if (joueur.getPointsDeVie() <= 0 || minotaureActuel.getPointsDeVie() <= 0) {
+                            showEndCombat(gui, joueur, minotaureActuel, etage, tour,
+                                    historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
+                                    window, mainPanel);
+                        }
+
+                        if (joueur instanceof TWood) {
+                            int pvjoueur = joueur.getPointsDeVie() + 10;
+                            joueur.setPointsDeVie(pvjoueur);
+                            lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                        }
+
+                        historyPanel.addComponent(new Label("\n" + resultat.message()));
+                        updateGui(gui);
+
+                        itemWindow.close();
+
+                    } else if (item instanceof Coffre) {
+                        // Gestion du coffre : afficher le contenu et créer un bouton par item du coffre
+                        List<Item> contenuCoffre = recupererContenuCoffre(userId);
+
+                        if (contenuCoffre.isEmpty()) {
+                            MessageDialog.showMessageDialog(gui, "Coffre vide", "Le coffre est vide.");
+                            return;
+                        }
+
+                        // Nouvelle fenêtre pour afficher contenu du coffre
+                        BasicWindow coffreWindow = new BasicWindow("Contenu du coffre");
+                        coffreWindow.setHints(List.of(Window.Hint.CENTERED));
+                        Panel coffrePanel = new Panel(new LinearLayout(Direction.VERTICAL));
+
+                        for (Item i : contenuCoffre) {
+                            String nomItemCoffre = i.getNom();
+
+                            Button itemButtonCoffre = new Button(nomItemCoffre, () -> {
+                                try {
+                                    UseItemResult resultatCoffre = null;
+
+                                    if (i instanceof Potion || i instanceof Weapon) {
+                                        resultatCoffre = callUseItemAPI(joueur.getId(), i.getId(), getMinotaurusActuel().getId());
+
+                                        // Mise à jour des PV joueur et minotaure
+                                        int pvRecup = resultatCoffre.pointsDeVieRendues() + joueur.getPointsDeVie();
+                                        int degatsMin = minotaureActuel.getPointsDeVie() - resultatCoffre.degatsInfliges();
+
+                                        joueur.setPointsDeVie(pvRecup);
+                                        minotaureActuel.setPointsDeVie(degatsMin);
+
+                                        // Mise à jour des labels
+                                        lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                                        lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
+
+                                        try { Thread.sleep(300); } catch (InterruptedException ignored) {}
+
+                                        if (minotaureActuel.getPointsDeVie() <= 0) {
+                                            showEndCombat(gui, joueur, minotaureActuel, etage, tour,
+                                                    historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
+                                                    window, mainPanel);
+                                        }
+
+                                        int degatsMinotaure = minotaureActuel.attaquer(joueur);
+                                        lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                                        historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégâts"));
+
+                                        tour.incrementer();
+                                        lblTour.setText("Tour : " + tour.getTour());
+
+                                        if (joueur.getPointsDeVie() <= 0 || minotaureActuel.getPointsDeVie() <= 0) {
+                                            showEndCombat(gui, joueur, minotaureActuel, etage, tour,
+                                                    historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
+                                                    window, mainPanel);
+                                        }
+
+                                        if (joueur instanceof TWood) {
+                                            int pvjoueur = joueur.getPointsDeVie() + 10;
+                                            joueur.setPointsDeVie(pvjoueur);
+                                            lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
+                                        }
+
+                                        historyPanel.addComponent(new Label("\n" + resultatCoffre.message()));
+                                        updateGui(gui);
+
+                                        coffreWindow.close();
+                                        itemWindow.close();
+
+                                    } else {
+                                        MessageDialog.showMessageDialog(gui, "Erreur", "Cet item ne peut pas être utilisé.");
+                                    }
+
+                                } catch (Exception e) {
+                                    System.err.println("Erreur lors de l'utilisation de l'item du coffre : " + e.getMessage());
+                                    MessageDialog.showMessageDialog(gui, "Erreur", "Erreur lors de l'utilisation de l'objet du coffre : " + e.getMessage());
+                                }
+                            });
+
+                            coffrePanel.addComponent(itemButtonCoffre);
+                        }
+
+                        coffrePanel.addComponent(new Button("Retour", coffreWindow::close));
+
+                        coffreWindow.setComponent(coffrePanel);
+                        gui.addWindowAndWait(coffreWindow);
                     } else {
-                        resultat[0] = callUseItemAPI(joueur.getId(), item.getId(), getMinotaurusActuel().getId());
+                        MessageDialog.showMessageDialog(gui, "Erreur", "Type d'item non supporté.");
                     }
-
-                    // Mise à jour des points de vie dans les objets
-                    int pvRecuperer = resultat[0].pointsDeVieRendues() + joueur.getPointsDeVie();
-                    int degatsInfligéMinotaure = minotaureActuel.getPointsDeVie() - resultat[0].degatsInfliges();
-
-                    joueur.setPointsDeVie(pvRecuperer);
-                    minotaureActuel.setPointsDeVie(degatsInfligéMinotaure);
-
-                    // Mise à jour des labels avec les PV mis à jour
-                    lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-                    lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
-
-                    try{sleep(300);}catch (InterruptedException ignored) {}
-
-                    if (minotaureActuel.getPointsDeVie() <= 0) {
-                        showEndCombat(gui, joueur, minotaureActuel, etage, tour,
-                                historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
-                                window, mainPanel);
-                    }
-
-                    int degatsMinotaure = minotaureActuel.attaquer(joueur);
-
-                    lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-                    historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
-
-                    tour.incrementer();
-                    lblTour.setText("Tour : " + tour.getTour());
-
-                    if (joueur.getPointsDeVie() <= 0 || minotaureActuel.getPointsDeVie() <= 0) {
-                        showEndCombat(gui, joueur, minotaureActuel, etage, tour,
-                                historyPanel, lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
-                                window, mainPanel);
-                    }
-                    if (joueur instanceof TWood) {
-                        ((TWood) joueur).regenererPV();
-                    }
-
-                    historyPanel.addComponent(new Label("\n" + resultat[0].message()));
-                    updateGui(gui);
-
-                    itemWindow.close();
                 } catch (Exception e) {
                     System.err.println("Erreur lors de l'utilisation de l'item : " + e.getMessage());
                     MessageDialog.showMessageDialog(gui, "Erreur", "Une erreur est survenue lors de l'utilisation de l'objet : " + e.getMessage());
@@ -601,6 +687,7 @@ public class LanternaCombat {
 
             panel.addComponent(itemButton);
         }
+
         panel.addComponent(new Button("Retour", () -> {
             itemWindow.close();
             window.setComponent(mainPanel);
@@ -609,6 +696,7 @@ public class LanternaCombat {
         itemWindow.setComponent(panel);
         gui.addWindowAndWait(itemWindow);
     }
+
 
     private static void showEndCombat(
             MultiWindowTextGUI gui, Personnage joueur, Minotaurus minotaure,
@@ -784,6 +872,7 @@ public class LanternaCombat {
     private static boolean hasCoffreInInventory(int idPersonnage) {
         try {
             String url = "http://localhost:8080/inventaire/coffre/existe/" + idPersonnage;
+            System.out.println("JWT Token utilisé : " + jwtToken);
             String response = sendRequest(url, "GET", null, jwtToken);
             return Boolean.parseBoolean(response);
         } catch (Exception e) {

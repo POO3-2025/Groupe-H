@@ -81,7 +81,7 @@ public class LanternaInventaireManager {
         }));
 
         if (depuisInventaire) {
-            boolean hasCoffre = inventaireDAO.hasCoffreInInventory(String.valueOf(personnage.getId()));
+            boolean hasCoffre = inventaireDAO.hasCoffreInInventory(userId);
             if (hasCoffre) {
                 panel.addComponent(new Button("Ajouter au coffre", () -> {
                     boolean success = inventaireDAO.ajouterItemDansCoffre(item, userId);

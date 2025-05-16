@@ -14,7 +14,7 @@ public interface InventaireDAO {
 
     Item recupererItemParId(String itemId);
 
-    boolean hasCoffreInInventory(String userId);
+    boolean hasCoffreInInventory(int userId);
 
     void initialiserInventaireVide(int idPersonnage);
 

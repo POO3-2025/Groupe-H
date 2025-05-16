@@ -38,9 +38,8 @@ public class InventaireDAOImpl implements InventaireDAO {
         this.collection = database.getCollection("Inventaire");
     }
 
-    // Vérifie si l'utilisateur a déjà un coffre dans son inventaire (MongoDB)
-    public boolean hasCoffreInInventory(String userId) {
-        Document query = new Document("userId", userId);
+    public boolean hasCoffreInInventory(int idPersonnage) {
+        Document query = new Document("idPersonnage", idPersonnage);
         Document userInventory = collection.find(query).first();
 
         if (userInventory != null) {
@@ -53,6 +52,7 @@ public class InventaireDAOImpl implements InventaireDAO {
         }
         return false;
     }
+
 
 
     // Méthode pour ajouter un item à l'inventaire

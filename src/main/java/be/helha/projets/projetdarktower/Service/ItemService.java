@@ -47,7 +47,7 @@ public class ItemService {
         return inventaireDAO.DeleteItem(itemId);
     }
 
-    public boolean possedeCoffre(String userId) {
+    public boolean possedeCoffre(int userId) {
         return inventaireDAO.hasCoffreInInventory(userId);
     }
 
