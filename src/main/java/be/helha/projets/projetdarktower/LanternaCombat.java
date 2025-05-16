@@ -70,6 +70,12 @@ public class LanternaCombat {
         window.setHints(List.of(Window.Hint.CENTERED));
         Panel panel = new Panel(new GridLayout(1));
 
+        panel.addComponent(new EmptySpace()); // espace vide pour l'esthétique
+        panel.addComponent(new Label("Oserez-vous gravir les 20 étages de la DarkTower ?"));
+        panel.addComponent(new Label("Affrontez le Minotaurus à chaque niveau, gérez vos ressources,"));
+        panel.addComponent(new Label("et devenez le maître de la tour dans ce jeu stratégique au tour par tour."));
+        panel.addComponent(new EmptySpace());
+
         panel.addComponent(new Label("===== MENU DarkTower ====="));
         panel.addComponent(new Button("1. S'inscrire", () -> {
             window.close();
