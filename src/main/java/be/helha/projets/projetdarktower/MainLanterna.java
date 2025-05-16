@@ -41,7 +41,7 @@ public class MainLanterna {
     private static void showMainMenu(WindowBasedTextGUI gui, Screen screen) {
         BasicWindow window = new BasicWindow("Menu DarkTower");
         Panel panel = new Panel(new GridLayout(1));
-        String introText = "\nDarkTower, le jeu où franchir les étages d'une tour semble impossible. "
+        String introText = "\nDarkTower, le jeu où franchir les étages d'une tour semble impossible ?. "
                 + "\nChaque défi devient plus complexe, rendant l'ascension inaccessibile. "
                 + "\nLa tour est un piège où l'échec est inévitable.";
         panel.addComponent(new Label(introText));
