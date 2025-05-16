@@ -484,10 +484,28 @@ public class LanternaCombat {
                 lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                 historyPanel, gui, screen, window, mainPanel));
 
-        Button btnQuitter = new Button("Abondonner ?", () -> {
-            window.close();
-            showLoggedInMenu(gui);
+        Button btnQuitter = new Button("Abandonner ", () -> {
+            try {
+                // Ferme d'abord la fenêtre active (combat)
+                Window activeWindow = gui.getActiveWindow();
+                if (activeWindow != null) {
+                    activeWindow.close();
+                }
+
+                // Ensuite, ferme toutes les autres fenêtres si jamais il en reste
+                for (Window w : gui.getWindows()) {
+                    w.close();
+                }
+
+                // Recharge le menu connecté
+                showLoggedInMenu(gui);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                MessageDialog.showMessageDialog(gui, "Erreur", "Une erreur est survenue :\n" + e.toString());
+            }
         });
+
 
         contentPanel.addComponent(btnAttaquer);
         contentPanel.addComponent(btnItem);
