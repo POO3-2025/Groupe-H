@@ -12,7 +12,7 @@ public interface InventaireDAO {
 
     List<Item> chargerInventaire(int idPersonnage);
 
-    Item recupererItemParId(String itemId);
+    Item recupererItemParId(String itemId,int idPersonnage);
 
     boolean hasCoffreInInventory(int userId);
 
@@ -22,5 +22,5 @@ public interface InventaireDAO {
 
     String DeleteItem(String itemId);
 
-    UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible);
+    UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible,int UserId);
 }

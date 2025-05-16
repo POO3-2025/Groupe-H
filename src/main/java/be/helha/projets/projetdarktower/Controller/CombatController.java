@@ -4,6 +4,7 @@ import be.helha.projets.projetdarktower.DTO.UseItemResult;
 import be.helha.projets.projetdarktower.Model.Personnage;
 import be.helha.projets.projetdarktower.Item.ItemSelectionRequest;
 import be.helha.projets.projetdarktower.Item.Item;
+import be.helha.projets.projetdarktower.Model.User;
 import be.helha.projets.projetdarktower.Service.CharacterService;
 import be.helha.projets.projetdarktower.Service.ItemService;
 import jakarta.validation.Valid;
@@ -21,23 +22,23 @@ public class CombatController {
     @Autowired
     private CharacterService characterService;
 
-    @PostMapping("/{id}/use-item")
-    public ResponseEntity<UseItemResult> useItem(@PathVariable String id, @RequestBody @Valid ItemSelectionRequest request) {
-        // Récupération du personnage utilisateur
-        System.out.println("ID du joueur reçu : " + id);
+    @PostMapping("/{idUser}/{idPersonnage}/use-item")
+    public ResponseEntity<UseItemResult> useItem(@PathVariable String idPersonnage,
+                                                 @PathVariable int idUser,
+                                                 @RequestBody @Valid ItemSelectionRequest request) {
+        System.out.println("ID personnage utilisateur reçu : " + idPersonnage);
+        System.out.println("ID propriétaire inventaire reçu : " + idUser);
 
-        Personnage utilisateur = characterService.selectCharacter(id);
+        Personnage utilisateur = characterService.selectCharacter(idPersonnage);
         if (utilisateur == null) {
             return ResponseEntity.status(404).body(new UseItemResult("Personnage utilisateur non trouvé.", 0, 0, null));
         }
 
-        // Récupération de l'item à utiliser
-        Item item = itemService.recupererItemParId(request.getItemId());
+        Item item = itemService.recupererItemParId(request.getItemId(), idUser);
         if (item == null) {
             return ResponseEntity.status(404).body(new UseItemResult("Objet non trouvé.", 0, 0, null));
         }
 
-        // Récupération de la cible si spécifiée
         Personnage cible = null;
         if (request.getCibleId() != null) {
             cible = characterService.selectCharacter(request.getCibleId());
@@ -46,10 +47,9 @@ public class CombatController {
             }
         }
 
-        // Utilisation de l'item
-        UseItemResult resultat = itemService.utiliserItem(item, utilisateur, cible);
+        UseItemResult resultat = itemService.utiliserItem(item, utilisateur, cible ,idUser);
         System.out.println("Résultat de l'utilisation de l'item : " + resultat);
-        // Retourne le résultat avec les informations mises à jour
         return ResponseEntity.ok(resultat);
     }
+
 }

@@ -35,12 +35,12 @@ public class ItemService {
         return inventaireDAO.chargerInventaire(idPersonnage);
     }
 
-    public Item recupererItemParId(String itemId) {
-        return inventaireDAO.recupererItemParId(itemId);
+    public Item recupererItemParId(String itemId, int idPersonnage) {
+        return inventaireDAO.recupererItemParId(itemId,idPersonnage);
     }
 
-    public UseItemResult utiliserItem(Item item, Personnage utilisateur, Personnage cible) {
-        return inventaireDAO.UseItem(item, utilisateur, cible);
+    public UseItemResult utiliserItem(Item item, Personnage utilisateur, Personnage cible ,int UserId) {
+        return inventaireDAO.UseItem(item, utilisateur, cible, UserId);
     }
 
     public String supprimerItem(String itemId) {

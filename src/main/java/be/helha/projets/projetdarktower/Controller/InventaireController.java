@@ -50,12 +50,12 @@ public class InventaireController {
     }
 
     @PostMapping("/{idPersonnage}/coffre/ajouter")
-    public ResponseEntity<String> ajouterItemDansCoffre(@PathVariable int idPersonnage, @RequestBody Item item) {
+    public ResponseEntity<Boolean> ajouterItemDansCoffre(@PathVariable int idPersonnage, @RequestBody Item item) {
         boolean success = itemService.ajouterItemDansCoffre(item, idPersonnage);
         if (success) {
-            return ResponseEntity.ok("Item ajouté dans le coffre.");
+            return ResponseEntity.ok(success);
         } else {
-            return ResponseEntity.badRequest().body("Impossible d'ajouter l'item dans le coffre.");
+            return ResponseEntity.badRequest().body(false);
         }
     }
 
@@ -76,8 +76,8 @@ public class InventaireController {
     }
 
     @GetMapping("/item/{itemId}")
-    public ResponseEntity<Item> recupererItemParId(@PathVariable String itemId) {
-        Item item = itemService.recupererItemParId(itemId);
+    public ResponseEntity<Item> recupererItemParId(@PathVariable String itemId ,@PathVariable int idPersonnage) {
+        Item item = itemService.recupererItemParId(itemId, idPersonnage);
         if (item != null) {
             return ResponseEntity.ok(item);
         } else {

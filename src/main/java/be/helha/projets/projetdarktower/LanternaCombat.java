@@ -347,9 +347,12 @@ public class LanternaCombat {
         if (depuisInventaire) {
             boolean hasCoffre = hasCoffreInInventory(userId);
             System.out.println("DEBUG: hasCoffreInInventory(" + userId + ") = " + hasCoffre);
-            if (hasCoffre) {
+
+            // N'affiche pas l'option si l'item est un coffre
+            if (hasCoffre && !"Coffre".equals(item.getType())) {
                 panel.addComponent(new Button("Ajouter au coffre", () -> {
                     boolean success = ajouterItemDansCoffre(item, userId);
+                    System.out.println("le bool : " + success);
                     if (success) {
                         supprimerItem(item.getId());
                         MessageDialog.showMessageDialog(gui, "Succès", "Item déplacé dans le coffre.");
@@ -358,10 +361,11 @@ public class LanternaCombat {
                     }
                     window.close();
                     previousWindow.close();
-                    showInventaire(gui,personnage);
+                    showInventaire(gui, personnage);
                 }));
             }
-        } else {
+        }
+        else {
             panel.addComponent(new Button("Ajouter à l'inventaire", () -> {
                 boolean ok = ajouterItem(userId,item);
                 if (ok) {
@@ -546,7 +550,7 @@ public class LanternaCombat {
                 try {
                     if (item instanceof Potion || item instanceof Weapon) {
                         // Appel API pour utiliser potion ou arme
-                        UseItemResult resultat = callUseItemAPI(joueur.getId(), item.getId(), getMinotaurusActuel().getId());
+                        UseItemResult resultat = callUseItemAPI(joueur.getId(),userId ,item.getId(), getMinotaurusActuel().getId());
 
                         // Mise à jour des PV joueur et minotaure
                         int pvRecuperer = resultat.pointsDeVieRendues() + joueur.getPointsDeVie();
@@ -613,7 +617,7 @@ public class LanternaCombat {
                                     UseItemResult resultatCoffre = null;
 
                                     if (i instanceof Potion || i instanceof Weapon) {
-                                        resultatCoffre = callUseItemAPI(joueur.getId(), i.getId(), getMinotaurusActuel().getId());
+                                        resultatCoffre = callUseItemAPI(joueur.getId(),userId ,i.getId(), getMinotaurusActuel().getId());
 
                                         // Mise à jour des PV joueur et minotaure
                                         int pvRecup = resultatCoffre.pointsDeVieRendues() + joueur.getPointsDeVie();
@@ -822,6 +826,7 @@ public class LanternaCombat {
             return new ArrayList<>();
         }
     }
+
     private static List<Item> recupererContenuCoffre(int idPersonnage) {
         try {
             String url = "http://localhost:8080/inventaire/" + idPersonnage + "/coffre";
@@ -840,12 +845,16 @@ public class LanternaCombat {
             ObjectMapper mapper = new ObjectMapper();
             String body = mapper.writeValueAsString(item);
             String response = sendRequest(url, "POST", body, jwtToken);
-            return response.contains("succès");
+            System.out.println("Response API: " + response);
+
+            return Boolean.parseBoolean(response);
         } catch (Exception e) {
             System.err.println("Erreur lors de l'ajout de l'item dans le coffre : " + e.getMessage());
             return false;
         }
     }
+
+
 
     private static boolean supprimerItemDuCoffre(String itemId, int idPersonnage) {
         try {
@@ -891,16 +900,20 @@ public class LanternaCombat {
             con.setRequestProperty("Authorization", "Bearer " + token);
         }
 
-        con.setDoOutput(true);
-        if (body != null) {
+        // Ne mettre doOutput à true QUE si on a un corps à envoyer (POST, PUT...)
+        if (body != null && !body.isEmpty()) {
+            con.setDoOutput(true);
             try (OutputStream os = con.getOutputStream()) {
                 byte[] input = body.getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
+        } else {
+            con.setDoOutput(false);
         }
 
         InputStream inputStream;
-        if (con.getResponseCode() >= 400) {
+        int responseCode = con.getResponseCode();
+        if (responseCode >= 400) {
             inputStream = con.getErrorStream();
         } else {
             inputStream = con.getInputStream();
@@ -915,6 +928,7 @@ public class LanternaCombat {
             return response.toString();
         }
     }
+
 
     private static Personnage createCharacter(String characterId) {
         switch (characterId) {
@@ -931,10 +945,10 @@ public class LanternaCombat {
         }
     }
 
-    public static UseItemResult callUseItemAPI(String joueurId, String itemId, String cibleId) {
+    public static UseItemResult callUseItemAPI(String idPersonnage, int idUser, String itemId, String cibleId) {
         try {
-            String encodedJoueurId = URLEncoder.encode(joueurId, StandardCharsets.UTF_8);
-            String urlString = "http://localhost:8080/Combat/" + encodedJoueurId + "/use-item";
+            String encodedIdPersonnage = URLEncoder.encode(idPersonnage, StandardCharsets.UTF_8);
+            String urlString = "http://localhost:8080/Combat/" + idUser + "/" + encodedIdPersonnage + "/use-item";
 
             JSONObject requestBody = new JSONObject();
             requestBody.put("itemId", itemId);
@@ -971,6 +985,7 @@ public class LanternaCombat {
 
         return new UseItemResult("Erreur lors de l'utilisation de l'objet.", 0, 0, null);
     }
+
 
     public static void envoyerChoixPersonnage(String characterId, int userId, String jwtToken) {
         try {
