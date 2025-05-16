@@ -23,17 +23,7 @@ public class CharacterController {
         }
     }
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<String> deleteCharacter(@PathVariable Long id) {
-        boolean deleted = characterService.deleteCharacter(id);
-        if (deleted) {
-            return ResponseEntity.ok("Personnage supprimé avec succès !");
-        } else {
-            return ResponseEntity.status(404).body("Personnage non trouvé.");
-        }
-    }
 
-     */
 
 
 
