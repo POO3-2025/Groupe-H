@@ -369,43 +369,44 @@ public class LanternaCombat {
             boolean hasCoffre = hasCoffreInInventory(userId);
             System.out.println("DEBUG: hasCoffreInInventory(" + userId + ") = " + hasCoffre);
 
-            // N'affiche pas l'option si l'item est un coffre
-            if (hasCoffre && !"Coffre".equals(item.getType())) {
-                panel.addComponent(new Button("Ajouter au coffre", () -> {
-                    boolean success = ajouterItemDansCoffre(item, userId);
-                    System.out.println("le bool : " + success);
-                    if (success) {
-                        supprimerItem(item.getId());
-                        MessageDialog.showMessageDialog(gui, "Succès", "Item déplacé dans le coffre.");
+                // N'affiche pas l'option si l'item est un coffre
+                if (hasCoffre && !"Coffre".equals(item.getType())) {
+                    panel.addComponent(new Button("Ajouter au coffre", () -> {
+                        boolean success = ajouterItemDansCoffre(item, userId);
+                        System.out.println("le bool : " + success);
+                        System.out.println("Nom Item : " + item.getNom());
+                        if (success) {
+                            System.out.println("Nom Item : " + item.getNom());
+                            MessageDialog.showMessageDialog(gui, "Succès", "Item déplacé dans le coffre.");
+                        } else {
+                            MessageDialog.showMessageDialog(gui, "Erreur", "Le coffre est plein ou introuvable.");
+                        }
+                        System.out.println("Nom Item : " + item.getNom());
+                        window.close();
+                        previousWindow.close();
+                        showInventaire(gui,personnage);
+                    }));
+                }
+            } else {
+                panel.addComponent(new Button("Ajouter à l'inventaire", () -> {
+                    boolean ok = ajouterItem(userId,item);
+                    if (ok) {
+                        supprimerItemDuCoffre(item.getId(), userId);
+                        MessageDialog.showMessageDialog(gui, "Succès", "Item déplacé dans l'inventaire.");
                     } else {
-                        MessageDialog.showMessageDialog(gui, "Erreur", "Le coffre est plein ou introuvable.");
+                        MessageDialog.showMessageDialog(gui, "Erreur", "Inventaire plein !");
                     }
                     window.close();
                     previousWindow.close();
                     showInventaire(gui,personnage);
                 }));
             }
-        }
-        else {
-            panel.addComponent(new Button("Ajouter à l'inventaire", () -> {
-                boolean ok = ajouterItem(userId,item);
-                if (ok) {
-                    supprimerItemDuCoffre(item.getId(), userId);
-                    MessageDialog.showMessageDialog(gui, "Succès", "Item déplacé dans l'inventaire.");
-                } else {
-                    MessageDialog.showMessageDialog(gui, "Erreur", "Inventaire plein !");
-                }
-                window.close();
-                previousWindow.close();
-                showInventaire(gui,personnage);
-            }));
-        }
 
-        panel.addComponent(new Button("Retour", window::close));
+            panel.addComponent(new Button("Retour", window::close));
 
-        window.setComponent(panel);
-        gui.addWindowAndWait(window);
-    }
+            window.setComponent(panel);
+            gui.addWindowAndWait(window);
+        }
 
     public static void afficherEtChoisirItem(
             MultiWindowTextGUI gui, BasicWindow parentWindow,
@@ -486,22 +487,12 @@ public class LanternaCombat {
                 lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                 historyPanel, gui, screen, window, mainPanel));
 
-        Button btnQuitter = new Button("Abandonner ", () -> {
+        Button btnQuitter = new Button("Abandonner", () -> {
+            etageActuel = new Etage(1);
+            minotaureActuel = new Minotaurus("999", etageActuel.getEtage());
+            tourActuel = new Tour(1);
             try {
-                // Ferme d'abord la fenêtre active (combat)
-                Window activeWindow = gui.getActiveWindow();
-                if (activeWindow != null) {
-                    activeWindow.close();
-                }
-
-                // Ensuite, ferme toutes les autres fenêtres si jamais il en reste
-                for (Window w : gui.getWindows()) {
-                    w.close();
-                }
-
-                // Recharge le menu connecté
-                showLoggedInMenu(gui);
-
+                handleQuitAction(gui);
             } catch (Exception e) {
                 e.printStackTrace();
                 MessageDialog.showMessageDialog(gui, "Erreur", "Une erreur est survenue :\n" + e.toString());
@@ -738,6 +729,18 @@ public class LanternaCombat {
         itemWindow.setComponent(panel);
         gui.addWindowAndWait(itemWindow);
     }
+    private static void handleQuitAction(MultiWindowTextGUI gui) {
+        // Créez une copie de la liste des fenêtres pour éviter ConcurrentModificationException
+        List<Window> windowsToClose = new ArrayList<>(gui.getWindows());
+
+        // Fermez chaque fenêtre
+        for (Window window : windowsToClose) {
+            window.close();
+        }
+
+        // Rechargez le menu connecté
+        showLoggedInMenu(gui);
+    }
 
 
     private static void showEndCombat(
@@ -755,8 +758,15 @@ public class LanternaCombat {
 
         if (joueur.getPointsDeVie() <= 0) {
             endPanel.addComponent(new Button("Recommencer", () -> {
+                // Ferme la fenêtre actuelle
+                window.close();
+
+                // Réinitialise l'état du combat
                 restartCombat(joueur, minotaureActuel, etage, tour, historyPanel, lblTour, lblJoueurPV, lblMinotaurePV);
-                window.setComponent(mainPanel);
+
+                // Crée la nouvelle fenêtre de combat et l'affiche
+                BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), joueur);
+                gui.addWindowAndWait(combatWindow);
             }));
         } else {
             endPanel.addComponent(new Button("Suivant", () -> {
@@ -804,19 +814,18 @@ public class LanternaCombat {
             Personnage joueur, Minotaurus minotaure, Etage etage, Tour tour,
             Panel historyPanel, Label lblTour, Label lblJoueurPV, Label lblMinotaurePV) {
 
-        historyPanel.removeAllComponents();
-        historyPanel.addComponent(new Label("Début du combat"));
-
+        // Réinitialisation des données (logique pure)
         etageActuel = new Etage(1);
-        minotaureActuel = new Minotaurus("999", etage.getEtage()); // Réinitialise les PV du Minotaure
-        joueur.resetPointDeVie(); // Réinitialise les PV du joueur
+        minotaureActuel = new Minotaurus("999", etageActuel.getEtage());
+        tourActuel = new Tour(1);
+
+        joueur.resetPointDeVie();
         tour.resetTour();
 
-        lblTour.setText("Tour : " + tour.getTour());
-        lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
-        lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
         viderInventaire(userId);
+        System.out.println("Combat réinitialisé.");
     }
+
 
     private static void updateGui(MultiWindowTextGUI gui) {
         try {
@@ -946,6 +955,9 @@ public class LanternaCombat {
                 byte[] input = body.getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
+        }
+        else {
+            con.setDoOutput(false);
         }
 
         InputStream inputStream;
