@@ -457,61 +457,70 @@ public class InventaireDAOImpl implements InventaireDAO {
         Document inventaireDoc = collection.find(query).first();
 
         if (inventaireDoc == null) {
-            System.out.println("Aucun inventaire trouvé pour ce personnage.");
+            System.out.println("[ajouterItemDansCoffre] Aucun inventaire trouvé pour ce personnage.");
             return false;
         }
 
         List<Document> items = (List<Document>) inventaireDoc.get("items");
 
-        // Empêcher l'ajout d'un coffre dans un autre coffre
         if (item instanceof Coffre) {
-            System.out.println("Impossible d'ajouter un coffre dans un autre coffre.");
+            System.out.println("[ajouterItemDansCoffre] Impossible d'ajouter un coffre dans un autre coffre.");
             return false;
         }
 
         boolean ajouteDansCoffre = false;
 
-        // Chercher le coffre
+        // Modifier en mémoire : trouver coffre, ajouter item dans son contenu
         for (Document doc : items) {
             if (doc != null && "Coffre".equals(doc.getString("type"))) {
                 List<Object> contenuCoffre = (List<Object>) doc.get("contenu");
 
-                // Chercher une case libre (null) dans le coffre
+                if (contenuCoffre == null) {
+                    System.out.println("[ajouterItemDansCoffre] Contenu coffre invalide.");
+                    return false;
+                }
+
                 for (int i = 0; i < contenuCoffre.size(); i++) {
                     if (contenuCoffre.get(i) == null) {
                         contenuCoffre.set(i, toDocument(item));
+                        doc.put("contenu", contenuCoffre); // Mise à jour en mémoire
                         ajouteDansCoffre = true;
+                        System.out.println("[ajouterItemDansCoffre] Item ajouté dans coffre à la position " + i);
                         break;
                     }
                 }
-                if (ajouteDansCoffre) {
-                    break;
-                }
+
+                if (ajouteDansCoffre) break;
             }
         }
 
         if (!ajouteDansCoffre) {
-            System.out.println("Pas de coffre ou pas de place dans le coffre.");
+            System.out.println("[ajouterItemDansCoffre] Pas de place dans le coffre ou coffre inexistant.");
             return false;
         }
 
-        // Supprimer l'item de l'inventaire principal (remplacer par null)
+        // Supprimer item dans inventaire principal (en mémoire)
         for (int i = 0; i < items.size(); i++) {
             Object obj = items.get(i);
             if (obj instanceof Document docItem) {
                 if (item.getId().equals(docItem.getString("_id"))) {
                     items.set(i, null);
+                    System.out.println("[ajouterItemDansCoffre] Item supprimé de l'inventaire principal à la position " + i);
                     break;
                 }
             }
         }
 
-        // Mettre à jour la base avec les modifications
+        // Mettre à jour une seule fois l'inventaire complet dans la base
         Document update = new Document("$set", new Document("items", items));
         collection.updateOne(query, update);
+        System.out.println("[ajouterItemDansCoffre] Inventaire mis à jour dans MongoDB.");
 
         return true;
     }
+
+
+
 
 
 
