@@ -253,17 +253,23 @@ public class InventaireDAOImpl implements InventaireDAO {
         for (Document doc : items) {
             if (doc != null && itemId.equals(doc.getString("_id"))) {
                 int usage = doc.getInteger("Usage_Time", 0);
-                doc.put("Usage_Time", Math.max(usage - 1, 0));
-                updated = true;
+                // Ne pas décrémenter si Usage_Time est déjà à 0
+                if (usage > 0) {
+                    doc.put("Usage_Time", usage - 1); // Décrémenter Usage_Time
+                    updated = true;
+                }
                 break;
             }
+            // Si l'item est dans un coffre
             if (doc != null && "Coffre".equals(doc.getString("type"))) {
                 List<Document> contenu = (List<Document>) doc.get("contenu");
                 for (Document itemDoc : contenu) {
                     if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
                         int usage = itemDoc.getInteger("Usage_Time", 0);
-                        itemDoc.put("Usage_Time", Math.max(usage - 1, 0));
-                        updated = true;
+                        if (usage > 0) {
+                            itemDoc.put("Usage_Time", usage - 1); // Décrémenter Usage_Time
+                            updated = true;
+                        }
                         break;
                     }
                 }
@@ -289,6 +295,7 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
 
+
     // Méthode d'utilisation d'un item (Potion, Weapon, etc.)
 
     @Override
@@ -304,10 +311,11 @@ public class InventaireDAOImpl implements InventaireDAO {
                     " et récupère " + pointsRecuperes + " points de vie.";
             itemSupprimeId = item.getId();
 
-            DeleteItem(item.getId());
-            // Retourne les PV actuels de la cible sans modifier les PV du Minotaure
-            return new UseItemResult(message, 0,
-                    pointsRecuperes, itemSupprimeId);
+                DeleteItem(item.getId());
+
+
+
+            return new UseItemResult(message, 0, pointsRecuperes, itemSupprimeId);
         }
 
         if (item instanceof Weapon) {
@@ -320,12 +328,13 @@ public class InventaireDAOImpl implements InventaireDAO {
                 itemSupprimeId = null;
 
                 // Décrémenter la durabilité de l'arme
-                decrementUsageInMongo(item.getId(),UserId);
-                int usages = RecupererUsageItem(item.getId());
-                weapon.setUsages(weapon.getUsages() - 1); // Mise à jour locale des usages
+                decrementUsageInMongo(item.getId(), UserId);
+
+                int usagesRestants = RecupererUsageItem(item.getId(), UserId);
+                weapon.setUsages(usagesRestants); // Mise à jour locale des usages
 
                 // Vérifie si les usages sont à 0 et supprime l'item
-                if (usages <= 0) {
+                if (usagesRestants <= 0) {
                     DeleteItem(item.getId());
                     itemSupprimeId = item.getId(); // Indique que l'item a été supprimé
                     message += " L'arme " + weapon.getNom() + " est cassée et a été supprimée.";
@@ -334,34 +343,51 @@ public class InventaireDAOImpl implements InventaireDAO {
                 message = "Aucune cible spécifiée pour l'attaque.";
             }
 
-            return new UseItemResult(message, weapon.getDegats(),
-                    0, itemSupprimeId);
+            return new UseItemResult(message, weapon.getDegats(), 0, itemSupprimeId);
         }
 
-        return new UseItemResult("Type d'item non supporté.", 0,
-                0, null);
+        return new UseItemResult("Type d'item non supporté.", 0, 0, null);
     }
 
-    private int RecupererUsageItem(String itemId) {
-        Document inventory = collection.find(new Document("items._id", itemId)).first();
+
+    private int RecupererUsageItem(String itemId, int idPersonnage) {
+        // Cherche l'inventaire du personnage par ID
+        Document query = new Document("idPersonnage", idPersonnage);
+        Document inventory = collection.find(query).first();  // Recherche dans la collection d'inventaires
+
         if (inventory != null) {
+            // Récupère la liste des items de l'inventaire
             List<Document> items = (List<Document>) inventory.get("items");
+
+            // Cherche dans l'inventaire principal
             for (Document item : items) {
                 if (item != null && itemId.equals(item.getString("_id"))) {
-                    return item.getInteger("Usage_Time", 0);
+                    // Si l'item est trouvé, retourne son Usage_Time
+                    return item.getInteger("Usage_Time", 0);  // Si Usage_Time n'existe pas, retourne 0
                 }
+            }
+
+            // Si l'item n'est pas trouvé dans l'inventaire principal, cherche dans les coffres
+            for (Document item : items) {
                 if (item != null && "Coffre".equals(item.getString("type"))) {
+                    // Si c'est un coffre, récupère le contenu du coffre
                     List<Document> contenu = (List<Document>) item.get("contenu");
-                    for (Document itemDoc : contenu) {
-                        if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
-                            return itemDoc.getInteger("Usage_Time", 0);
+                    if (contenu != null) {
+                        for (Document itemDoc : contenu) {
+                            // Cherche l'item dans le contenu du coffre
+                            if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
+                                // Si l'item est trouvé dans le coffre, retourne son Usage_Time
+                                return itemDoc.getInteger("Usage_Time", 0);
+                            }
                         }
                     }
                 }
             }
         }
+        // Si l'item n'est trouvé ni dans l'inventaire principal ni dans le coffre, retourne 0
         return 0;
     }
+
 
 
 
