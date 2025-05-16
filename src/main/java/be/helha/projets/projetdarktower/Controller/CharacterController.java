@@ -22,6 +22,7 @@ public class CharacterController {
             return ResponseEntity.status(404).body("Personnage non trouvé.");
         }
     }
+    /*
     @PostMapping("/create")
     public ResponseEntity<String> createCharacter(@RequestBody CreateCharacterRequest request) {
         Personnage nouveauPersonnage = characterService.createCharacter(request.getNom(), request.getClasse(), request.getNiveau());
@@ -40,6 +41,8 @@ public class CharacterController {
             return ResponseEntity.status(404).body("Personnage non trouvé.");
         }
     }
+
+     */
 
 
 
