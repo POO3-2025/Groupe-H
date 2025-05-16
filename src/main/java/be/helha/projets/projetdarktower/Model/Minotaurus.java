@@ -12,7 +12,7 @@ public class Minotaurus extends Personnage {
         int degats = switch (typeAttaque.toLowerCase()) {
             case "charge" -> this.attaque + 10;  // attaque spéciale
             case "coup de hache" -> this.attaque;
-            default -> 10; // attaque faible par défaut
+            default -> 25;
         };
 
         cible.pointsDeVie -= degats;
