@@ -133,19 +133,39 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
 
-    public Item recupererItemParId(String itemId) {
+    public Item recupererItemParId(String itemId, int idPersonnage) {
         System.out.println("Recherche de l'item avec l'ID : " + itemId);
 
-        Document match = collection.find(new Document("items._id", itemId)).first();
+        // Récupère le document complet du personnage
+        Document inventoryDoc = collection.find(new Document("idPersonnage", idPersonnage)).first();
 
-        if (match != null) {
-            List<Document> items = (List<Document>) match.get("items");
+        if (inventoryDoc != null) {
+            List<Document> items = (List<Document>) inventoryDoc.get("items");
+
+            // Chercher dans inventaire principal
             for (Document doc : items) {
-                if (doc != null && itemId.equals(doc.getString("_id"))) { // Vérifie que l'item n'est pas null
+                if (doc != null && itemId.equals(doc.getString("_id"))) {
                     String nom = doc.getString("nom");
                     Item item = ItemFactory.creerItem(nom);
                     item.setId(doc.getString("_id"));
                     return item;
+                }
+            }
+
+            // Chercher dans contenu des coffres
+            for (Document doc : items) {
+                if (doc != null && "Coffre".equals(doc.getString("type"))) {
+                    List<Document> contenu = (List<Document>) doc.get("contenu");
+                    if (contenu != null) {
+                        for (Document itemDoc : contenu) {
+                            if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
+                                String nom = itemDoc.getString("nom");
+                                Item item = ItemFactory.creerItem(nom);
+                                item.setId(itemDoc.getString("_id"));
+                                return item;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -159,13 +179,18 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
 
+
+
     public String DeleteItem(String itemId) {
-        // On parcourt chaque inventaire pour chercher l'item
+        // Parcourt chaque inventaire
         FindIterable<Document> allInventories = collection.find();
 
         for (Document inventory : allInventories) {
             List<Object> items = (List<Object>) inventory.get("items");
 
+            boolean updated = false;
+
+            // Cherche dans inventaire principal
             for (int i = 0; i < items.size(); i++) {
                 Object obj = items.get(i);
                 if (obj instanceof Document) {
@@ -173,17 +198,38 @@ public class InventaireDAOImpl implements InventaireDAO {
                     String id = itemDoc.getString("_id");
 
                     if (itemId.equals(id)) {
-                        // Remplace l'item par null
+                        // Supprime item principal
                         items.set(i, null);
+                        updated = true;
+                        break;
+                    }
 
-                        // Met à jour l'inventaire dans MongoDB
-                        Document filter = new Document("_id", inventory.getObjectId("_id"));
-                        Document update = new Document("$set", new Document("items", items));
-                        collection.updateOne(filter, update);
-
-                        return "Item avec l'ID " + itemId + " supprimé avec succès.";
+                    // Si item est un coffre, cherche dans contenu
+                    if ("Coffre".equals(itemDoc.getString("type"))) {
+                        List<Object> contenu = (List<Object>) itemDoc.get("contenu");
+                        for (int j = 0; j < contenu.size(); j++) {
+                            Object objContenu = contenu.get(j);
+                            if (objContenu instanceof Document) {
+                                Document docContenu = (Document) objContenu;
+                                if (itemId.equals(docContenu.getString("_id"))) {
+                                    // Supprime item dans coffre
+                                    contenu.set(j, null);
+                                    updated = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (updated) break;
                     }
                 }
+            }
+
+            if (updated) {
+                // Met à jour la base
+                Document filter = new Document("_id", inventory.getObjectId("_id"));
+                Document update = new Document("$set", new Document("items", items));
+                collection.updateOne(filter, update);
+                return "Item avec l'ID " + itemId + " supprimé avec succès.";
             }
         }
 
@@ -192,19 +238,51 @@ public class InventaireDAOImpl implements InventaireDAO {
 
     //MAJ LA DB APRES CHAQUE UTILISATION
     // Dans la méthode `UseItem` de la classe `InventaireDAOImpl`
-    private void decrementUsageInMongo(String itemId) {
-        Document filter = new Document("items._id", itemId);
+    private void decrementUsageInMongo(String itemId, int idPersonnage) {
+        Document query = new Document("idPersonnage", idPersonnage);
+        Document inventoryDoc = collection.find(query).first();
 
-        // Décrémentation de l'usage de l'item
-        Document update = new Document("$inc", new Document("items.$[elem].Usage_Time", -1));
+        if (inventoryDoc == null) {
+            System.out.println("Inventaire non trouvé pour idPersonnage = " + idPersonnage);
+            return;
+        }
 
-        List<Bson> arrayFilters = List.of(Filters.eq("elem._id", itemId));
+        List<Document> items = (List<Document>) inventoryDoc.get("items");
+        boolean updated = false;
 
-        UpdateOptions options = new UpdateOptions().arrayFilters(arrayFilters);
+        for (Document doc : items) {
+            if (doc != null && itemId.equals(doc.getString("_id"))) {
+                int usage = doc.getInteger("Usage_Time", 0);
+                doc.put("Usage_Time", Math.max(usage - 1, 0));
+                updated = true;
+                break;
+            }
+            if (doc != null && "Coffre".equals(doc.getString("type"))) {
+                List<Document> contenu = (List<Document>) doc.get("contenu");
+                for (Document itemDoc : contenu) {
+                    if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
+                        int usage = itemDoc.getInteger("Usage_Time", 0);
+                        itemDoc.put("Usage_Time", Math.max(usage - 1, 0));
+                        updated = true;
+                        break;
+                    }
+                }
+                if (updated) break;
+            }
+        }
 
-        // Appliquer la mise à jour dans MongoDB
-        collection.updateOne(filter, update, options);
+        if (updated) {
+            Document filter = new Document("_id", inventoryDoc.getObjectId("_id"));
+            Document update = new Document("$set", new Document("items", items));
+            collection.updateOne(filter, update);
+            System.out.println("Inventaire mis à jour dans MongoDB pour itemId : " + itemId);
+        } else {
+            System.out.println("Item non trouvé pour décrément usage : " + itemId);
+        }
     }
+
+
+
 
 
 
@@ -214,7 +292,7 @@ public class InventaireDAOImpl implements InventaireDAO {
     // Méthode d'utilisation d'un item (Potion, Weapon, etc.)
 
     @Override
-    public UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible) {
+    public UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible, int UserId) {
         String message;
         String itemSupprimeId = null;
 
@@ -242,7 +320,7 @@ public class InventaireDAOImpl implements InventaireDAO {
                 itemSupprimeId = null;
 
                 // Décrémenter la durabilité de l'arme
-                decrementUsageInMongo(item.getId());
+                decrementUsageInMongo(item.getId(),UserId);
                 int usages = RecupererUsageItem(item.getId());
                 weapon.setUsages(weapon.getUsages() - 1); // Mise à jour locale des usages
 
@@ -269,13 +347,22 @@ public class InventaireDAOImpl implements InventaireDAO {
         if (inventory != null) {
             List<Document> items = (List<Document>) inventory.get("items");
             for (Document item : items) {
-                if (item != null && itemId.equals(item.getString("_id"))) { // Vérifie que l'item n'est pas null
+                if (item != null && itemId.equals(item.getString("_id"))) {
                     return item.getInteger("Usage_Time", 0);
+                }
+                if (item != null && "Coffre".equals(item.getString("type"))) {
+                    List<Document> contenu = (List<Document>) item.get("contenu");
+                    for (Document itemDoc : contenu) {
+                        if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
+                            return itemDoc.getInteger("Usage_Time", 0);
+                        }
+                    }
                 }
             }
         }
-        return 0; // Valeur par défaut si non trouvé
+        return 0;
     }
+
 
 
 
@@ -337,6 +424,7 @@ public class InventaireDAOImpl implements InventaireDAO {
 
         return doc;
     }
+
     public List<Item> recupererContenuCoffre(int idPersonnage) {
         Document query = new Document("idPersonnage", idPersonnage);
         Document inventaireDoc = collection.find(query).first();
@@ -363,30 +451,70 @@ public class InventaireDAOImpl implements InventaireDAO {
 
         return new ArrayList<>();
     }
+
     public boolean ajouterItemDansCoffre(Item item, int idPersonnage) {
         Document query = new Document("idPersonnage", idPersonnage);
         Document inventaireDoc = collection.find(query).first();
 
-        if (inventaireDoc == null) return false;
+        if (inventaireDoc == null) {
+            System.out.println("Aucun inventaire trouvé pour ce personnage.");
+            return false;
+        }
 
         List<Document> items = (List<Document>) inventaireDoc.get("items");
 
+        // Empêcher l'ajout d'un coffre dans un autre coffre
+        if (item instanceof Coffre) {
+            System.out.println("Impossible d'ajouter un coffre dans un autre coffre.");
+            return false;
+        }
+
+        boolean ajouteDansCoffre = false;
+
+        // Chercher le coffre
         for (Document doc : items) {
             if (doc != null && "Coffre".equals(doc.getString("type"))) {
-                List<Object> contenu = (List<Object>) doc.get("contenu");
-                for (int i = 0; i < contenu.size(); i++) {
-                    if (contenu.get(i) == null) {
-                        contenu.set(i, toDocument(item));
-                        collection.updateOne(query, new Document("$set", new Document("items", items)));
-                        return true;
+                List<Object> contenuCoffre = (List<Object>) doc.get("contenu");
+
+                // Chercher une case libre (null) dans le coffre
+                for (int i = 0; i < contenuCoffre.size(); i++) {
+                    if (contenuCoffre.get(i) == null) {
+                        contenuCoffre.set(i, toDocument(item));
+                        ajouteDansCoffre = true;
+                        break;
                     }
                 }
-                return false; // Pas de place
+                if (ajouteDansCoffre) {
+                    break;
+                }
             }
         }
 
-        return false; // Pas de coffre
+        if (!ajouteDansCoffre) {
+            System.out.println("Pas de coffre ou pas de place dans le coffre.");
+            return false;
+        }
+
+        // Supprimer l'item de l'inventaire principal (remplacer par null)
+        for (int i = 0; i < items.size(); i++) {
+            Object obj = items.get(i);
+            if (obj instanceof Document docItem) {
+                if (item.getId().equals(docItem.getString("_id"))) {
+                    items.set(i, null);
+                    break;
+                }
+            }
+        }
+
+        // Mettre à jour la base avec les modifications
+        Document update = new Document("$set", new Document("items", items));
+        collection.updateOne(query, update);
+
+        return true;
     }
+
+
+
     public boolean supprimerItemDuCoffre(String itemId, int idPersonnage) {
         Document query = new Document("idPersonnage", idPersonnage);
         Document inventaireDoc = collection.find(query).first();

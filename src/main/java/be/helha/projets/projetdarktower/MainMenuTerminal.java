@@ -19,7 +19,7 @@ public class MainMenuTerminal {
         InventaireDAOImpl dao = new InventaireDAOImpl();
         String objectId = "682271a08ca2e216ce73a681";
 
-        Item item = dao.recupererItemParId(objectId);
+        Item item = dao.recupererItemParId(objectId,1);
         System.out.println(item);
     }
 }

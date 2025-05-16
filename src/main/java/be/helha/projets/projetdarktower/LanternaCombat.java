@@ -70,6 +70,12 @@ public class LanternaCombat {
         window.setHints(List.of(Window.Hint.CENTERED));
         Panel panel = new Panel(new GridLayout(1));
 
+        panel.addComponent(new EmptySpace()); // espace vide pour l'esthétique
+        panel.addComponent(new Label("Oserez-vous gravir les 20 étages de la DarkTower ?"));
+        panel.addComponent(new Label("Affrontez le Minotaurus à chaque niveau, gérez vos ressources,"));
+        panel.addComponent(new Label("et devenez le maître de la tour dans ce jeu stratégique au tour par tour."));
+        panel.addComponent(new EmptySpace());
+
         panel.addComponent(new Label("===== MENU DarkTower ====="));
         panel.addComponent(new Button("1. S'inscrire", () -> {
             window.close();
@@ -159,6 +165,21 @@ public class LanternaCombat {
                 String json = "{\"username\":\"" + usernameBox.getText() + "\",\"password\":\"" + passwordBox.getText() + "\"}";
                 String response = sendRequest("http://localhost:8080/login", "POST", json, null);
 
+                // Si c’est une erreur
+                if (response.startsWith("ERROR_403:") || response.startsWith("ERROR_401:")) {
+                    String errorJson = response.substring(response.indexOf(":") + 1);
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode errorNode = mapper.readTree(errorJson);
+                        String message = errorNode.has("error") ? errorNode.get("error").asText() : "Nom d'utilisateur ou mot de passe incorrect.";
+                        MessageDialog.showMessageDialog(gui, "Erreur", message);
+                    } catch (Exception ex) {
+                        MessageDialog.showMessageDialog(gui, "Erreur", "Nom d'utilisateur ou mot de passe incorrect.");
+                    }
+                    return;
+                }
+
+
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode node = mapper.readTree(response);
 
@@ -171,9 +192,9 @@ public class LanternaCombat {
                     isLoggedIn = true;
                     jwtToken = tokenNode.asText();
                     NomUser = usernameNode.asText();
+                    userId = userIdNode.asInt();
 
-                    MessageDialog.showMessageDialog(gui, "Succès",
-                            "Bienvenue " + usernameNode.asText());
+                    MessageDialog.showMessageDialog(gui, "Succès", "Bienvenue " + NomUser);
                     window.close();
                     showLoggedInMenu(gui);
                 } else {
@@ -181,7 +202,7 @@ public class LanternaCombat {
                 }
 
             } catch (Exception e) {
-                MessageDialog.showMessageDialog(gui, "Erreur", e.getMessage());
+                MessageDialog.showMessageDialog(gui, "Erreur", "Une erreur est survenue : " + e.getMessage());
             }
         }));
 
@@ -347,9 +368,12 @@ public class LanternaCombat {
         if (depuisInventaire) {
             boolean hasCoffre = hasCoffreInInventory(userId);
             System.out.println("DEBUG: hasCoffreInInventory(" + userId + ") = " + hasCoffre);
-            if (hasCoffre) {
+
+            // N'affiche pas l'option si l'item est un coffre
+            if (hasCoffre && !"Coffre".equals(item.getType())) {
                 panel.addComponent(new Button("Ajouter au coffre", () -> {
                     boolean success = ajouterItemDansCoffre(item, userId);
+                    System.out.println("le bool : " + success);
                     if (success) {
                         supprimerItem(item.getId());
                         MessageDialog.showMessageDialog(gui, "Succès", "Item déplacé dans le coffre.");
@@ -361,7 +385,8 @@ public class LanternaCombat {
                     showInventaire(gui,personnage);
                 }));
             }
-        } else {
+        }
+        else {
             panel.addComponent(new Button("Ajouter à l'inventaire", () -> {
                 boolean ok = ajouterItem(userId,item);
                 if (ok) {
@@ -461,7 +486,7 @@ public class LanternaCombat {
                 lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                 historyPanel, gui, screen, window, mainPanel));
 
-        Button btnQuitter = new Button("Abandonner", () -> {
+        Button btnQuitter = new Button("Abandonner ", () -> {
             try {
                 // Ferme d'abord la fenêtre active (combat)
                 Window activeWindow = gui.getActiveWindow();
@@ -482,7 +507,6 @@ public class LanternaCombat {
                 MessageDialog.showMessageDialog(gui, "Erreur", "Une erreur est survenue :\n" + e.toString());
             }
         });
-
 
         contentPanel.addComponent(btnAttaquer);
         contentPanel.addComponent(btnItem);
@@ -564,7 +588,7 @@ public class LanternaCombat {
                 try {
                     if (item instanceof Potion || item instanceof Weapon) {
                         // Appel API pour utiliser potion ou arme
-                        UseItemResult resultat = callUseItemAPI(joueur.getId(), item.getId(), getMinotaurusActuel().getId());
+                        UseItemResult resultat = callUseItemAPI(joueur.getId(),userId ,item.getId(), getMinotaurusActuel().getId());
 
                         // Mise à jour des PV joueur et minotaure
                         int pvRecuperer = resultat.pointsDeVieRendues() + joueur.getPointsDeVie();
@@ -631,7 +655,7 @@ public class LanternaCombat {
                                     UseItemResult resultatCoffre = null;
 
                                     if (i instanceof Potion || i instanceof Weapon) {
-                                        resultatCoffre = callUseItemAPI(joueur.getId(), i.getId(), getMinotaurusActuel().getId());
+                                        resultatCoffre = callUseItemAPI(joueur.getId(),userId ,i.getId(), getMinotaurusActuel().getId());
 
                                         // Mise à jour des PV joueur et minotaure
                                         int pvRecup = resultatCoffre.pointsDeVieRendues() + joueur.getPointsDeVie();
@@ -858,12 +882,16 @@ public class LanternaCombat {
             ObjectMapper mapper = new ObjectMapper();
             String body = mapper.writeValueAsString(item);
             String response = sendRequest(url, "POST", body, jwtToken);
-            return response.contains("succès");
+            System.out.println("Response API: " + response);
+
+            return Boolean.parseBoolean(response);
         } catch (Exception e) {
             System.err.println("Erreur lors de l'ajout de l'item dans le coffre : " + e.getMessage());
             return false;
         }
     }
+
+
 
     private static boolean supprimerItemDuCoffre(String itemId, int idPersonnage) {
         try {
@@ -899,8 +927,10 @@ public class LanternaCombat {
         }
     }
 
+
     private static String sendRequest(String urlString, String method, String body, String token) throws Exception {
-        URL url = new URL(urlString);
+        URI uri = new URI(urlString); // Remplacer String par URI
+        URL url = uri.toURL(); // Conversion en URL
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod(method);
         con.setRequestProperty("Content-Type", "application/json");
@@ -909,8 +939,9 @@ public class LanternaCombat {
             con.setRequestProperty("Authorization", "Bearer " + token);
         }
 
-        con.setDoOutput(true);
-        if (body != null) {
+        // Ne mettre doOutput à true QUE si on a un corps à envoyer (POST, PUT...)
+        if (body != null && !body.isEmpty()) {
+            con.setDoOutput(true);
             try (OutputStream os = con.getOutputStream()) {
                 byte[] input = body.getBytes("utf-8");
                 os.write(input, 0, input.length);
@@ -918,20 +949,27 @@ public class LanternaCombat {
         }
 
         InputStream inputStream;
-        if (con.getResponseCode() >= 400) {
+        int responseCode = con.getResponseCode();
+        if (responseCode >= 400) {
             inputStream = con.getErrorStream();
         } else {
             inputStream = con.getInputStream();
         }
 
+        StringBuilder response = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, "utf-8"))) {
-            StringBuilder response = new StringBuilder();
+
             String responseLine;
             while ((responseLine = br.readLine()) != null) {
                 response.append(responseLine.trim());
             }
-            return response.toString();
         }
+
+        if (responseCode >= 400) {
+            return "ERROR_" + responseCode + ":" + response.toString();
+        }
+
+        return response.toString();
     }
 
     private static Personnage createCharacter(String characterId) {
@@ -949,10 +987,10 @@ public class LanternaCombat {
         }
     }
 
-    public static UseItemResult callUseItemAPI(String joueurId, String itemId, String cibleId) {
+    public static UseItemResult callUseItemAPI(String idPersonnage, int idUser, String itemId, String cibleId) {
         try {
-            String encodedJoueurId = URLEncoder.encode(joueurId, StandardCharsets.UTF_8);
-            String urlString = "http://localhost:8080/Combat/" + encodedJoueurId + "/use-item";
+            String encodedIdPersonnage = URLEncoder.encode(idPersonnage, StandardCharsets.UTF_8);
+            String urlString = "http://localhost:8080/Combat/" + idUser + "/" + encodedIdPersonnage + "/use-item";
 
             JSONObject requestBody = new JSONObject();
             requestBody.put("itemId", itemId);
@@ -989,6 +1027,7 @@ public class LanternaCombat {
 
         return new UseItemResult("Erreur lors de l'utilisation de l'objet.", 0, 0, null);
     }
+
 
     public static void envoyerChoixPersonnage(String characterId, int userId, String jwtToken) {
         try {
