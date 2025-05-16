@@ -47,11 +47,7 @@ public class MainLanternaCharacterMenu {
         panel.addComponent(new Button("1. Choisir un personnage", () -> {
             window.close();
             showCharacterSelection(gui);
-        }));panel.addComponent(new Button("3. Inventaire", () -> {
-            window.close();
-            //showInventory(gui);
         }));
-
         panel.addComponent(new Button("2. Quitter", () -> {
             try {
                 gui.getGUIThread().invokeLater(() -> System.exit(0));
