@@ -70,6 +70,12 @@ public class LanternaCombat {
         window.setHints(List.of(Window.Hint.CENTERED));
         Panel panel = new Panel(new GridLayout(1));
 
+        panel.addComponent(new EmptySpace()); // espace vide pour l'esthétique
+        panel.addComponent(new Label("Oserez-vous gravir les 20 étages de la DarkTower ?"));
+        panel.addComponent(new Label("Affrontez le Minotaurus à chaque niveau, gérez vos ressources,"));
+        panel.addComponent(new Label("et devenez le maître de la tour dans ce jeu stratégique au tour par tour."));
+        panel.addComponent(new EmptySpace());
+
         panel.addComponent(new Label("===== MENU DarkTower ====="));
         panel.addComponent(new Button("1. S'inscrire", () -> {
             window.close();
@@ -159,6 +165,21 @@ public class LanternaCombat {
                 String json = "{\"username\":\"" + usernameBox.getText() + "\",\"password\":\"" + passwordBox.getText() + "\"}";
                 String response = sendRequest("http://localhost:8080/login", "POST", json, null);
 
+                // Si c’est une erreur
+                if (response.startsWith("ERROR_403:") || response.startsWith("ERROR_401:")) {
+                    String errorJson = response.substring(response.indexOf(":") + 1);
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        JsonNode errorNode = mapper.readTree(errorJson);
+                        String message = errorNode.has("error") ? errorNode.get("error").asText() : "Nom d'utilisateur ou mot de passe incorrect.";
+                        MessageDialog.showMessageDialog(gui, "Erreur", message);
+                    } catch (Exception ex) {
+                        MessageDialog.showMessageDialog(gui, "Erreur", "Nom d'utilisateur ou mot de passe incorrect.");
+                    }
+                    return;
+                }
+
+
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode node = mapper.readTree(response);
 
@@ -171,9 +192,9 @@ public class LanternaCombat {
                     isLoggedIn = true;
                     jwtToken = tokenNode.asText();
                     NomUser = usernameNode.asText();
+                    userId = userIdNode.asInt();
 
-                    MessageDialog.showMessageDialog(gui, "Succès",
-                            "Bienvenue " + usernameNode.asText());
+                    MessageDialog.showMessageDialog(gui, "Succès", "Bienvenue " + NomUser);
                     window.close();
                     showLoggedInMenu(gui);
                 } else {
@@ -181,7 +202,7 @@ public class LanternaCombat {
                 }
 
             } catch (Exception e) {
-                MessageDialog.showMessageDialog(gui, "Erreur", e.getMessage());
+                MessageDialog.showMessageDialog(gui, "Erreur", "Une erreur est survenue : " + e.getMessage());
             }
         }));
 
@@ -361,7 +382,7 @@ public class LanternaCombat {
                     }
                     window.close();
                     previousWindow.close();
-                    showInventaire(gui, personnage);
+                    showInventaire(gui,personnage);
                 }));
             }
         }
@@ -465,9 +486,26 @@ public class LanternaCombat {
                 lblTour, lblJoueurPV, lblMinotaurePV, lblEtage,
                 historyPanel, gui, screen, window, mainPanel));
 
-        Button btnQuitter = new Button("Abondonner ?", () -> {
-            window.close();
-            showLoggedInMenu(gui);
+        Button btnQuitter = new Button("Abandonner ", () -> {
+            try {
+                // Ferme d'abord la fenêtre active (combat)
+                Window activeWindow = gui.getActiveWindow();
+                if (activeWindow != null) {
+                    activeWindow.close();
+                }
+
+                // Ensuite, ferme toutes les autres fenêtres si jamais il en reste
+                for (Window w : gui.getWindows()) {
+                    w.close();
+                }
+
+                // Recharge le menu connecté
+                showLoggedInMenu(gui);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                MessageDialog.showMessageDialog(gui, "Erreur", "Une erreur est survenue :\n" + e.toString());
+            }
         });
 
         contentPanel.addComponent(btnAttaquer);
@@ -826,7 +864,6 @@ public class LanternaCombat {
             return new ArrayList<>();
         }
     }
-
     private static List<Item> recupererContenuCoffre(int idPersonnage) {
         try {
             String url = "http://localhost:8080/inventaire/" + idPersonnage + "/coffre";
@@ -890,8 +927,10 @@ public class LanternaCombat {
         }
     }
 
+
     private static String sendRequest(String urlString, String method, String body, String token) throws Exception {
-        URL url = new URL(urlString);
+        URI uri = new URI(urlString); // Remplacer String par URI
+        URL url = uri.toURL(); // Conversion en URL
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod(method);
         con.setRequestProperty("Content-Type", "application/json");
@@ -907,8 +946,6 @@ public class LanternaCombat {
                 byte[] input = body.getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
-        } else {
-            con.setDoOutput(false);
         }
 
         InputStream inputStream;
@@ -919,16 +956,21 @@ public class LanternaCombat {
             inputStream = con.getInputStream();
         }
 
+        StringBuilder response = new StringBuilder();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, "utf-8"))) {
-            StringBuilder response = new StringBuilder();
+
             String responseLine;
             while ((responseLine = br.readLine()) != null) {
                 response.append(responseLine.trim());
             }
-            return response.toString();
         }
-    }
 
+        if (responseCode >= 400) {
+            return "ERROR_" + responseCode + ":" + response.toString();
+        }
+
+        return response.toString();
+    }
 
     private static Personnage createCharacter(String characterId) {
         switch (characterId) {
