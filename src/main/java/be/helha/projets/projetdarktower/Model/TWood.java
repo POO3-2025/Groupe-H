@@ -3,7 +3,7 @@ package be.helha.projets.projetdarktower.Model;
 public class TWood extends Personnage {
 
     public TWood(String id) {
-        super(id, "TWood", 90, 35);
+        super(id, "TWood", 105, 35);
     }
 
     @Override
