@@ -92,7 +92,7 @@ public class ItemFactory {
         map.put("total soin", new Potion("Total soin", 100, 1.0,1));
 
         // Coffre
-        map.put("coffre", new Coffre("Coffre", 5.0));
+        map.put("coffre", new Coffre("Coffre", 50.0));
 
         return map;
     }

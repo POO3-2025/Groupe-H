@@ -44,12 +44,18 @@ public class InventaireDAOImpl implements InventaireDAO {
 
         if (userInventory != null) {
             List<Document> items = (List<Document>) userInventory.get("items");
-            for (Document item : items) {
-                if ("Coffre".equals(item.getString("type"))) {
-                    return true; // L'utilisateur a un coffre
+            System.out.println("[hasCoffreInInventory] items size: " + (items == null ? "null" : items.size()));
+            if (items != null) {
+                for (Document item : items) {
+                    System.out.println("[hasCoffreInInventory] item type: " + (item == null ? "null" : item.getString("type")));
+                    if (item != null && "Coffre".equals(item.getString("type"))) {
+                        System.out.println("[hasCoffreInInventory] Coffre trouvé");
+                        return true;
+                    }
                 }
             }
         }
+        System.out.println("[hasCoffreInInventory] Coffre non trouvé");
         return false;
     }
 
@@ -450,6 +456,27 @@ public class InventaireDAOImpl implements InventaireDAO {
 
         return doc;
     }
+    private Document toDocumentUsage(Item item, int usageTime) {
+        Document doc = new Document()
+                .append("_id", item.getId())
+                .append("nom", item.getNom())
+                .append("type", item.getType());
+
+        if (item instanceof Weapon) {
+            Weapon weapon = (Weapon) item;
+            doc.append("degats", weapon.getDegats());
+            doc.append("Usage_Time", usageTime);
+        } else if (item instanceof Potion) {
+            Potion potion = (Potion) item;
+            doc.append("pointsDeVieRecuperes", potion.getPointsDeVieRecuperes());
+            doc.append("Usage_Time", usageTime);
+        } else if (item instanceof Coffre) {
+            List<Object> contenuVide = new ArrayList<>(Collections.nCopies(10, null));
+            doc.append("contenu", contenuVide);
+        }
+
+        return doc;
+    }
 
     public List<Item> recupererContenuCoffre(int idPersonnage) {
         Document query = new Document("idPersonnage", idPersonnage);
@@ -495,9 +522,10 @@ public class InventaireDAOImpl implements InventaireDAO {
         }
 
         boolean ajouteDansCoffre = false;
+        int usageTimeActuel = RecupererUsageItem(item.getId(), idPersonnage);
 
-        // Modifier en mémoire : trouver coffre, ajouter item dans son contenu
-        for (Document doc : items) {
+        for (int index = 0; index < items.size(); index++) {
+            Document doc = items.get(index);
             if (doc != null && "Coffre".equals(doc.getString("type"))) {
                 List<Object> contenuCoffre = (List<Object>) doc.get("contenu");
 
@@ -506,15 +534,29 @@ public class InventaireDAOImpl implements InventaireDAO {
                     return false;
                 }
 
+                // Debug avant ajout
+                System.out.println("[ajouterItemDansCoffre] Taille contenu coffre avant ajout : " + contenuCoffre.size());
+                int nbItemsAvant = (int) contenuCoffre.stream().filter(obj -> obj != null).count();
+                System.out.println("[ajouterItemDansCoffre] Nombre d'items dans coffre avant ajout : " + nbItemsAvant);
+
                 for (int i = 0; i < contenuCoffre.size(); i++) {
                     if (contenuCoffre.get(i) == null) {
-                        contenuCoffre.set(i, toDocument(item));
-                        doc.put("contenu", contenuCoffre); // Mise à jour en mémoire
+                        Document docItem = toDocumentUsage(item, usageTimeActuel);
+                        contenuCoffre.set(i, docItem);
+                        doc.put("contenu", contenuCoffre);
+
+                        // Remet à jour l'item coffre dans la liste
+                        items.set(index, doc);
+
                         ajouteDansCoffre = true;
                         System.out.println("[ajouterItemDansCoffre] Item ajouté dans coffre à la position " + i);
                         break;
                     }
                 }
+
+                // Debug après ajout
+                int nbItemsApres = (int) contenuCoffre.stream().filter(obj -> obj != null).count();
+                System.out.println("[ajouterItemDansCoffre] Nombre d'items dans coffre après ajout : " + nbItemsApres);
 
                 if (ajouteDansCoffre) break;
             }
@@ -525,7 +567,7 @@ public class InventaireDAOImpl implements InventaireDAO {
             return false;
         }
 
-        // Supprimer item dans inventaire principal (en mémoire)
+        // Supprimer item dans inventaire principal
         for (int i = 0; i < items.size(); i++) {
             Object obj = items.get(i);
             if (obj instanceof Document docItem) {
@@ -537,16 +579,26 @@ public class InventaireDAOImpl implements InventaireDAO {
             }
         }
 
-        // Mettre à jour une seule fois l'inventaire complet dans la base
         Document update = new Document("$set", new Document("items", items));
+        System.out.println("[DEBUG] Items complets avant update :");
+        for (Document d : items) {
+            if (d == null) {
+                System.out.println("null slot");
+            } else {
+                System.out.println(d.toJson());
+            }
+        }
         collection.updateOne(query, update);
+
+        Document inventaireActualise = collection.find(query).first();
+        System.out.println("[DEBUG] Inventaire après update:");
+        System.out.println(inventaireActualise.toJson());
+
+
         System.out.println("[ajouterItemDansCoffre] Inventaire mis à jour dans MongoDB.");
 
         return true;
     }
-
-
-
 
 
 
