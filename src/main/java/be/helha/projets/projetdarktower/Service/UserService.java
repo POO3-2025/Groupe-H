@@ -45,4 +45,7 @@ public class UserService {
     public boolean isPasswordCorrect(User user, String rawPassword) {
         return encoder.matches(rawPassword, user.getPassword());
     }
+    public void updateIsLogged(int userId, int isLogged) {
+        userRepository.updateIsLogged(userId, isLogged);
+    }
 }

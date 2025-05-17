@@ -11,11 +11,13 @@ class LoginResponseTest {
         Long userId = 123L;
         String username = "userTest";
         String token = "token123";
+        int IsLoggedIn = 0;
 
-        LoginResponse response = new LoginResponse(userId, username, token);
+        LoginResponse response = new LoginResponse(userId, username, token,IsLoggedIn);
 
         assertEquals(userId, response.getUserId());
         assertEquals(username, response.getUsername());
         assertEquals(token, response.getToken());
+        assertEquals(IsLoggedIn, response.getIsLoggedIn());
     }
 }
