@@ -353,15 +353,45 @@ public class LanternaCombat {
         panel.addComponent(new Label("Que faire avec : " + item.getNom()));
 
         panel.addComponent(new Button("Supprimer", () -> {
-            if (depuisInventaire) {
-                supprimerItem(item.getId());
+            if (item instanceof Coffre) {
+                BasicWindow confirmationWindow = new BasicWindow("Confirmation");
+                Panel confirmationPanel = new Panel(new GridLayout(1));
+
+                confirmationPanel.addComponent(new Label("Tous les items présents dans le coffre vont être supprimés. Êtes-vous sûr ?"));
+
+                confirmationPanel.addComponent(new Button("Confirmer", () -> {
+
+                    if (depuisInventaire) {
+                        supprimerItem(item.getId());
+                    } else {
+                        supprimerItemDuCoffre(item.getId(), userId);
+                    }
+                    MessageDialog.showMessageDialog(gui, "Suppression", "Item supprimé.");
+                    confirmationWindow.close();
+                    window.close();
+                    previousWindow.close();
+                    showInventaire(gui, personnage);
+                }));
+
+                // Bouton pour annuler la suppression
+                confirmationPanel.addComponent(new Button("Annuler", () -> {
+                    confirmationWindow.close();  // Fermer la fenêtre de confirmation
+                    window.close(); // Fermer la fenêtre des options d'item
+                }));
+
+                confirmationWindow.setComponent(confirmationPanel);
+                gui.addWindowAndWait(confirmationWindow);
             } else {
-                supprimerItemDuCoffre(item.getId(), userId);
+                if (depuisInventaire) {
+                    supprimerItem(item.getId());
+                } else {
+                    supprimerItemDuCoffre(item.getId(), userId);
+                }
+                MessageDialog.showMessageDialog(gui, "Suppression", "Item supprimé.");
+                window.close();
+                previousWindow.close();
+                showInventaire(gui, personnage);
             }
-            MessageDialog.showMessageDialog(gui, "Suppression", "Item supprimé.");
-            window.close();
-            previousWindow.close();
-            showInventaire(gui,personnage);
         }));
 
         if (depuisInventaire) {
@@ -429,13 +459,21 @@ public class LanternaCombat {
 
         BasicWindow choixItemWindow = new BasicWindow("Choisissez un Item");
         choixItemWindow.setHints(List.of(Window.Hint.CENTERED));
-        Panel panel = new Panel(new LinearLayout(Direction.VERTICAL));
 
+        // Panneau principal
+        Panel mainPanel = new Panel(new LinearLayout(Direction.VERTICAL));
+
+        // Pour chaque item, on crée un panneau vertical avec un bouton et ses détails
         for (Item item : itemsChoisis) {
+            // Panneau pour chaque item avec son bouton et ses détails
+            Panel itemPanel = new Panel(new LinearLayout(Direction.VERTICAL));
+
             String itemNom = item.getNom();
+
+            // Créer le bouton pour l'item
             Button itemButton = new Button(itemNom, () -> {
                 try {
-                    boolean plein = ajouterItem(userId,item);
+                    boolean plein = ajouterItem(userId, item);
                     if (plein) {
                         MessageDialog.showMessageDialog(gui, "Succès", "L'item " + itemNom + " a été ajouté.");
                     } else {
@@ -445,16 +483,44 @@ public class LanternaCombat {
                     MessageDialog.showMessageDialog(gui, "Erreur", "Ajout de l'item impossible.");
                 }
 
+                // Ferme la fenêtre actuelle et exécute le callback
                 choixItemWindow.close();
                 onItemChosen.run();
             });
 
-            panel.addComponent(itemButton);
+            // Ajouter le bouton de l'item au panneau de l'item
+            itemPanel.addComponent(itemButton);
+
+            // Afficher les détails de l'item sous le bouton
+            String details = "Nom : " + itemNom;
+
+            if (item instanceof Potion) {
+                Potion potion = (Potion) item;
+                details += "\nPoints de vie récupérés : " + potion.getPointsDeVieRecuperes();
+            } else if (item instanceof Weapon) {
+                Weapon weapon = (Weapon) item;
+                details += "\nDégâts infligés : " + weapon.getDegats();
+            } else if (item instanceof Coffre) {
+                Coffre coffre = (Coffre) item;
+                details += "\nNombre d'espaces : " + 10; // Supposons que 'getCapacite()' retourne le nombre d'emplacements
+            }
+
+            // Ajouter les détails de l'item sous le bouton
+            itemPanel.addComponent(new Label(details));
+            itemPanel.addComponent(new EmptySpace()); // Espace vide pour l'esthétique
+            // Ajouter le panneau de l'item au panneau principal
+            mainPanel.addComponent(itemPanel);
         }
 
-        choixItemWindow.setComponent(panel);
+        // Configuration de la fenêtre
+        choixItemWindow.setComponent(mainPanel);
         gui.addWindowAndWait(choixItemWindow);
     }
+
+
+
+
+
 
     private static BasicWindow createCombatWindow(MultiWindowTextGUI gui, Screen screen, Personnage joueur) {
         BasicWindow window = new BasicWindow("Combat - DarkTower");

@@ -7,7 +7,7 @@ import org.bson.Document;
 
 
 public class Coffre extends Item {
-    private static final int CAPACITE_MAX = 5;
+    private static final int CAPACITE_MAX = 10;
     private final List<Item> contenu;
 
     public Coffre(String nom,double chanceDeDrop) {
