@@ -17,6 +17,8 @@ import com.googlecode.lanterna.terminal.swing.SwingTerminalFrame;
 import be.helha.projets.projetdarktower.Service.CharacterService;
 import org.json.JSONObject;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -46,9 +48,27 @@ public class LanternaCombat {
 
     public static void main(String[] args) {
         try {
+            // Ajout du shutdown hook
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                if (isLoggedIn) {
+                    System.out.println("Fermeture détectée. Vidage de l'inventaire...");
+                    viderInventaire(userId);
+                    isLoggedIn = false;
+                }
+            }));
+
+            // Votre logique principale ici
             DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
+
             terminalFactory.setInitialTerminalSize(new TerminalSize(150, 30));
             SwingTerminalFrame terminal = terminalFactory.createSwingTerminal();
+            terminal.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    System.out.println("Fenêtre fermée, arrêt de la JVM.");
+                    System.exit(0);  // Ceci déclenche le shutdown hook
+                }
+            });
             terminal.setVisible(true);
             terminal.setResizable(false);
 
@@ -473,20 +493,27 @@ public class LanternaCombat {
             // Créer le bouton pour l'item
             Button itemButton = new Button(itemNom, () -> {
                 try {
+                    boolean coffre = hasCoffreInInventory(userId);
                     boolean plein = ajouterItem(userId, item);
                     if (plein) {
                         MessageDialog.showMessageDialog(gui, "Succès", "L'item " + itemNom + " a été ajouté.");
+                        choixItemWindow.close();  // ferme la fenêtre seulement si succès
+                        onItemChosen.run();
+                    } else if(coffre && item.getType().equals("Coffre")){
+                        MessageDialog.showMessageDialog(gui, "Impossible", "Vous ne pouvez avoir qu'un coffre dans l'inventaire.");
+                        // Ne ferme pas la fenêtre, donc l'utilisateur reste sur la liste des 3 items
                     } else {
                         MessageDialog.showMessageDialog(gui, "Raté", "L'inventaire est rempli");
+                        choixItemWindow.close();  // ferme la fenêtre si inventaire plein
+                        onItemChosen.run();
                     }
                 } catch (Exception e) {
                     MessageDialog.showMessageDialog(gui, "Erreur", "Ajout de l'item impossible.");
+                    choixItemWindow.close();  // ferme la fenêtre en cas d'erreur
+                    onItemChosen.run();
                 }
-
-                // Ferme la fenêtre actuelle et exécute le callback
-                choixItemWindow.close();
-                onItemChosen.run();
             });
+
 
             // Ajouter le bouton de l'item au panneau de l'item
             itemPanel.addComponent(itemButton);
@@ -516,11 +543,6 @@ public class LanternaCombat {
         choixItemWindow.setComponent(mainPanel);
         gui.addWindowAndWait(choixItemWindow);
     }
-
-
-
-
-
 
     private static BasicWindow createCombatWindow(MultiWindowTextGUI gui, Screen screen, Personnage joueur) {
         BasicWindow window = new BasicWindow("Combat - DarkTower");
@@ -829,9 +851,13 @@ public class LanternaCombat {
                 // Réinitialise l'état du combat
                 restartCombat(joueur, minotaureActuel, etage, tour, historyPanel, lblTour, lblJoueurPV, lblMinotaurePV);
 
-                // Crée la nouvelle fenêtre de combat et l'affiche
-                BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), joueur);
-                gui.addWindowAndWait(combatWindow);
+                // Affiche la fenêtre de choix d'item avant de relancer le combat
+                afficherEtChoisirItem(gui, window, joueur, () -> {
+                    // Crée la nouvelle fenêtre de combat après le choix d'item
+                    BasicWindow combatWindow = createCombatWindow(gui, gui.getScreen(), joueur);
+                    gui.addWindowAndWait(combatWindow);
+                });
+
             }));
         } else {
             endPanel.addComponent(new Button("Suivant", () -> {
