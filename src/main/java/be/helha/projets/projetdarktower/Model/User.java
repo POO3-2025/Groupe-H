@@ -4,6 +4,7 @@ public class User {
     private Long id;
     private String username;
     private String password;
+    private int IsLoggedIn;
 
     // Getters / Setters
     public Long getId() {
@@ -28,5 +29,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public int getIsLoggedIn() {
+        return IsLoggedIn;
+    }
+
+    public void setIsLoggedIn(int isLoggedIn) {
+        IsLoggedIn = isLoggedIn;
     }
 }

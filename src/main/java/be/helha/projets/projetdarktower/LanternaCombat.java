@@ -53,7 +53,7 @@ public class LanternaCombat {
                 if (isLoggedIn) {
                     System.out.println("Fermeture détectée. Vidage de l'inventaire...");
                     viderInventaire(userId);
-                    isLoggedIn = false;
+                    updateIsLoggedIn(userId, 0);
                 }
             }));
 
@@ -203,16 +203,25 @@ public class LanternaCombat {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode node = mapper.readTree(response);
 
+
                 JsonNode tokenNode = node.get("token");
                 JsonNode usernameNode = node.get("username");
                 JsonNode userIdNode = node.get("userId");
+                JsonNode isLoggedInNode = node.get("isLoggedIn");
                 userId = userIdNode.asInt();
+                if (isLoggedInNode != null && isLoggedInNode.asInt() == 1) {
+                    // L'utilisateur est déjà connecté : afficher un message d'erreur et ne pas poursuivre
+                    MessageDialog.showMessageDialog(gui, "Erreur", "Vous êtes déjà connecté ailleurs. Connexion refusée.");
+                    return; // Sort de la méthode, la connexion est bloquée
+                }
+
 
                 if (tokenNode != null && usernameNode != null && userIdNode != null) {
                     isLoggedIn = true;
                     jwtToken = tokenNode.asText();
                     NomUser = usernameNode.asText();
                     userId = userIdNode.asInt();
+                    updateIsLoggedIn(userId, 1);
 
                     MessageDialog.showMessageDialog(gui, "Succès", "Bienvenue " + NomUser);
                     window.close();
@@ -249,6 +258,7 @@ public class LanternaCombat {
             window.close();
             isLoggedIn = false;
             jwtToken = null;
+            updateIsLoggedIn(userId, 0);
             MessageDialog.showMessageDialog(gui, "Info", "Déconnecté avec succès.");
         }));
 
@@ -942,6 +952,19 @@ public class LanternaCombat {
             System.err.println("Erreur lors de l'initialisation de l'inventaire : " + e.getMessage());
         }
     }
+    private static void updateIsLoggedIn(int userId, int isLoggedIn) {
+        try {
+            // Construire l'URL avec le paramètre isLogged en query
+            String url = String.format("http://localhost:8080/update-is-logged/%d?isLogged=%d", userId, isLoggedIn);
+
+            // Appeler la requête PUT avec le corps null et le token JWT
+            sendRequest(url, "PUT", null, jwtToken);
+
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la mise à jour du statut de connexion : " + e.getMessage());
+        }
+    }
+
 
     private static boolean ajouterItem(int idPersonnage, Item item) {
         try {
