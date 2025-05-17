@@ -46,9 +46,19 @@ public class AuthController {
 
             String token = jwtUtil.generateToken(user.getUsername());
 
-            LoginResponse response = new LoginResponse(user.getId(), user.getUsername(), token);
+            LoginResponse response = new LoginResponse(user.getId(), user.getUsername(), token , user.getIsLoggedIn());
             System.out.println("Réponse brute : " + response);
             return ResponseEntity.ok(response);
         }
+    @PutMapping("/update-is-logged/{userId}")
+    public ResponseEntity<String> updateIsLogged(@PathVariable int userId, @RequestParam int isLogged) {
+        try {
+            userService.updateIsLogged(userId, isLogged);
+            return ResponseEntity.ok("Statut de connexion mis à jour avec succès.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Erreur lors de la mise à jour du statut de connexion : " + e.getMessage());
+        }
+    }
 
 }

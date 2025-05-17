@@ -16,13 +16,14 @@ public class UserRepository {
     private static final String DB_KEY = "mysqlproduction";
 
     public void save(User user) {
-        String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
+        String sql = "INSERT INTO users (username, password,isLogged) VALUES (?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(DB_KEY);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, user.getUsername());
             stmt.setString(2, user.getPassword());
+            stmt.setInt(3, 0);
             stmt.executeUpdate();
 
         } catch (SQLException e) {
@@ -44,6 +45,7 @@ public class UserRepository {
                 user.setId(rs.getLong("id"));
                 user.setUsername(rs.getString("username"));
                 user.setPassword(rs.getString("password"));
+                user.setIsLoggedIn(rs.getInt("isLogged"));
                 return user;
             }
 
@@ -72,5 +74,19 @@ public class UserRepository {
         }
 
         return false;
+    }
+    public void updateIsLogged(int userId, int isLogged) {
+        String sql = "UPDATE users SET isLogged = ? WHERE id = ?";
+
+        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(DB_KEY);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, isLogged);
+            stmt.setLong(2, userId);
+            stmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la mise à jour de isLogged : " + e.getMessage());
+        }
     }
 }
