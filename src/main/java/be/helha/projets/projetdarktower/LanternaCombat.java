@@ -54,7 +54,11 @@ public class LanternaCombat {
                     System.out.println("Fermeture détectée. Vidage de l'inventaire...");
                     viderInventaire(userId);
 <<<<<<< HEAD
+<<<<<<< HEAD
                     isLoggedIn = false;
+=======
+                    updateIsLoggedIn(userId, 0);
+>>>>>>> cb7277968a87a3c2c03939c21d30ba0b81024277
 =======
                     updateIsLoggedIn(userId, 0);
 >>>>>>> cb7277968a87a3c2c03939c21d30ba0b81024277
