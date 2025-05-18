@@ -8,6 +8,7 @@ import be.helha.projets.projetdarktower.Service.CharacterService;
 import be.helha.projets.projetdarktower.Service.ItemService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +43,7 @@ public class CombatControllerTest {
     }
 
     @Test
+    @DisplayName("1: Utilisation d'un item réussie")
     void testUseItem_Success() throws Exception {
         Personnage utilisateur = new PersonnageConcret("idPerso123", "Guerrier", 100, 15);
         Item item = new Item();
@@ -70,6 +72,7 @@ public class CombatControllerTest {
     }
 
     @Test
+    @DisplayName("2: Échec si personnage utilisateur non trouvé")
     void testUseItem_PersonnageNotFound() throws Exception {
         ItemSelectionRequest request = new ItemSelectionRequest();
         request.setItemId("item123");
@@ -84,6 +87,7 @@ public class CombatControllerTest {
     }
 
     @Test
+    @DisplayName("3: Échec si item non trouvé")
     void testUseItem_ItemNotFound() throws Exception {
         Personnage utilisateur = new PersonnageConcret("idPerso", "Guerrier", 100, 15);
 
@@ -101,6 +105,7 @@ public class CombatControllerTest {
     }
 
     @Test
+    @DisplayName("4: Échec si cible non trouvée")
     void testUseItem_CibleNotFound() throws Exception {
         Personnage utilisateur = new PersonnageConcret("persoOK", "Mage", 80, 12);
         Item item = new Item();
@@ -121,10 +126,6 @@ public class CombatControllerTest {
                 .andExpect(jsonPath("$.message").value("Cible non trouvée."));
     }
 
-
-    /**
-     * Classe concrète minimale pour instancier Personnage abstrait dans les tests.
-     */
     private static class PersonnageConcret extends Personnage {
 
         public PersonnageConcret(String id, String nom, int pointsDeVie, int attaque) {
@@ -133,14 +134,10 @@ public class CombatControllerTest {
 
         @Override
         public int attaquer(Personnage cible) {
-            // Implémentation simple pour test
             return 0;
         }
     }
 
-    /**
-     * Configuration de test pour injecter les mocks manuellement au lieu de @MockBean
-     */
     static class TestConfig {
 
         @Bean

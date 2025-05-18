@@ -1,12 +1,21 @@
 package be.helha.projets.projetdarktower.Item;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class PotionTest {
 
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
+    }
+
     @Test
+    @DisplayName("1: Constructeur avec paramètres")
     void testConstructeurAvecParametres() {
         Potion potion = new Potion("Potion de soin de base", 25, 20.0, 1);
 
@@ -19,6 +28,7 @@ class PotionTest {
     }
 
     @Test
+    @DisplayName("2: Constructeur par défaut")
     void testConstructeurParDefaut() {
         Potion potion = new Potion();
 
@@ -30,6 +40,7 @@ class PotionTest {
     }
 
     @Test
+    @DisplayName("3: Getters et setters")
     void testGettersEtSetters() {
         Potion potion = new Potion();
         potion.setNom("Super Potion");
@@ -46,6 +57,7 @@ class PotionTest {
     }
 
     @Test
+    @DisplayName("4: toString()")
     void testToString() {
         Potion potion = new Potion("Total soin", 100, 1.0, 1);
         String result = potion.toString();

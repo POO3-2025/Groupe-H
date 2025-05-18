@@ -1,9 +1,18 @@
 package be.helha.projets.projetdarktower.Item;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class ItemTest {
+
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
+    }
 
     // Classe concrète pour test : simule un objet réel basé sur Item
     static class DummyItem extends Item {
@@ -14,6 +23,7 @@ class ItemTest {
     }
 
     @Test
+    @DisplayName("1: Test constructeur et getters")
     void testConstructeurEtGetters() {
         Item item = new DummyItem("Pierre magique", 55.5);
 
@@ -24,6 +34,7 @@ class ItemTest {
     }
 
     @Test
+    @DisplayName("2: Test setters")
     void testSetters() {
         Item item = new DummyItem("Initial", 0.0);
 
@@ -39,6 +50,7 @@ class ItemTest {
     }
 
     @Test
+    @DisplayName("3: Test toString()")
     void testToString() {
         Item item = new DummyItem("Étoile filante", 100.0);
         String result = item.toString();
@@ -49,6 +61,7 @@ class ItemTest {
     }
 
     @Test
+    @DisplayName("4: Test constructeur par défaut")
     void testConstructeurParDefaut() {
         Item item = new Item() {}; // Classe anonyme pour test Jackson
         assertNull(item.getId());

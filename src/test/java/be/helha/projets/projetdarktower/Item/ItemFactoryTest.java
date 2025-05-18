@@ -1,6 +1,9 @@
 package be.helha.projets.projetdarktower.Item;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import java.util.Map;
 
@@ -8,7 +11,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ItemFactoryTest {
 
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
+    }
+
     @Test
+    @DisplayName("1: Créer des armes connues")
     void testCreerItemKnownWeapons() {
         Item sword = ItemFactory.creerItem("épée en bois");
         assertNotNull(sword);
@@ -26,6 +35,7 @@ class ItemFactoryTest {
     }
 
     @Test
+    @DisplayName("2: Créer des potions connues")
     void testCreerItemKnownPotions() {
         Item potion = ItemFactory.creerItem("potion de soin intermédiaire");
         assertNotNull(potion);
@@ -35,6 +45,7 @@ class ItemFactoryTest {
     }
 
     @Test
+    @DisplayName("3: Créer un coffre")
     void testCreerItemCoffre() {
         Item coffre = ItemFactory.creerItem("coffre");
         assertNotNull(coffre);
@@ -44,6 +55,7 @@ class ItemFactoryTest {
     }
 
     @Test
+    @DisplayName("4: Créer un item inconnu lance exception")
     void testCreerItemUnknown() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             ItemFactory.creerItem("objet inconnu");
@@ -52,16 +64,15 @@ class ItemFactoryTest {
     }
 
     @Test
+    @DisplayName("5: Vérifier la présence des clés importantes dans getAllItems()")
     void testGetAllItemsContainsExpectedKeys() {
         Map<String, Item> allItems = ItemFactory.getAllItems();
         assertNotNull(allItems);
 
-        // Vérifier que quelques clés importantes sont présentes
         assertTrue(allItems.containsKey("épée en bois"));
         assertTrue(allItems.containsKey("potion de soin de base"));
         assertTrue(allItems.containsKey("coffre"));
 
-        // Vérifier qu'on obtient le bon type d'objet pour une clé
         assertTrue(allItems.get("épée en bois") instanceof Weapon);
         assertTrue(allItems.get("potion de soin de base") instanceof Potion);
         assertTrue(allItems.get("coffre") instanceof Coffre);

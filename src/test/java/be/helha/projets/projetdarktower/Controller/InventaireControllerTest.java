@@ -4,6 +4,7 @@ import be.helha.projets.projetdarktower.Item.Item;
 import be.helha.projets.projetdarktower.Service.ItemService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -36,7 +37,7 @@ public class InventaireControllerTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);  // Initialise @Mock Mockito
+        MockitoAnnotations.openMocks(this);
         objectMapper = new ObjectMapper();
 
         item = new Item();
@@ -45,6 +46,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("1: Vider l'inventaire retourne OK")
     void testViderInventaire() throws Exception {
         mockMvc.perform(post("/inventaire/1/vider"))
                 .andExpect(status().isOk())
@@ -52,6 +54,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("2: Initialiser un inventaire retourne OK")
     void testInitialiserInventaire() throws Exception {
         mockMvc.perform(post("/inventaire/1/initialiser"))
                 .andExpect(status().isOk())
@@ -59,6 +62,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("3: Ajouter un item avec succès")
     void testAjouterItem_Success() throws Exception {
         Mockito.when(itemService.ajouterItem(item, 1)).thenReturn(true);
 
@@ -70,6 +74,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("4: Ajouter un item échoue si inventaire plein")
     void testAjouterItem_Failure() throws Exception {
         Mockito.when(itemService.ajouterItem(item, 1)).thenReturn(false);
 
@@ -81,6 +86,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("5: Charger inventaire retourne la liste des items")
     void testChargerInventaire() throws Exception {
         Mockito.when(itemService.chargerInventaire(1)).thenReturn(List.of(item));
 
@@ -90,6 +96,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("6: Récupérer contenu coffre retourne la liste des items")
     void testRecupererContenuCoffre() throws Exception {
         Mockito.when(itemService.recupererContenuCoffre(1)).thenReturn(List.of(item));
 
@@ -99,6 +106,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("7: Ajouter item dans coffre avec succès")
     void testAjouterItemDansCoffre_Success() throws Exception {
         Mockito.when(itemService.ajouterItemDansCoffre(item, 1)).thenReturn(true);
 
@@ -110,6 +118,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("8: Échec ajout item dans coffre")
     void testAjouterItemDansCoffre_Failure() throws Exception {
         Mockito.when(itemService.ajouterItemDansCoffre(item, 1)).thenReturn(false);
 
@@ -121,6 +130,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("9: Supprimer item du coffre succès")
     void testSupprimerItemDuCoffre_Success() throws Exception {
         Mockito.when(itemService.supprimerItemDuCoffre("item123", 1)).thenReturn(true);
 
@@ -130,6 +140,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("10: Échec suppression item du coffre")
     void testSupprimerItemDuCoffre_Failure() throws Exception {
         Mockito.when(itemService.supprimerItemDuCoffre("item123", 1)).thenReturn(false);
 
@@ -139,6 +150,7 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("11: Vérifier la possession d'un coffre")
     void testPossedeCoffre() throws Exception {
         Mockito.when(itemService.possedeCoffre(1)).thenReturn(true);
 
@@ -148,25 +160,26 @@ public class InventaireControllerTest {
     }
 
     @Test
+    @DisplayName("12: Récupérer item par ID trouvé")
     void testRecupererItemParId_Found() throws Exception {
         Mockito.when(itemService.recupererItemParId("item123", 1)).thenReturn(item);
 
-        mockMvc.perform(get("/inventaire/item/item123")
-                        .param("idPersonnage", "1"))
+        mockMvc.perform(get("/inventaire/item/item123/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("item123"));
     }
 
     @Test
+    @DisplayName("13: Récupérer item par ID non trouvé")
     void testRecupererItemParId_NotFound() throws Exception {
         Mockito.when(itemService.recupererItemParId("item123", 1)).thenReturn(null);
 
-        mockMvc.perform(get("/inventaire/item/item123")
-                        .param("idPersonnage", "1"))
+        mockMvc.perform(get("/inventaire/item/item123/1"))
                 .andExpect(status().isNotFound());
     }
 
     @Test
+    @DisplayName("14: Supprimer un item par ID")
     void testSupprimerItem() throws Exception {
         Mockito.when(itemService.supprimerItem("item123")).thenReturn("Item supprimé");
 

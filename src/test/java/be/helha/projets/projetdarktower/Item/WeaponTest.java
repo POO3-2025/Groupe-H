@@ -1,12 +1,21 @@
 package be.helha.projets.projetdarktower.Item;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class WeaponTest {
 
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
+    }
+
     @Test
+    @DisplayName("1: Constructeur avec paramètres")
     void testConstructeurAvecParametres() {
         Weapon weapon = new Weapon("Épée en fer", 40, 4.0, 3);
 
@@ -19,6 +28,7 @@ class WeaponTest {
     }
 
     @Test
+    @DisplayName("2: Constructeur par défaut")
     void testConstructeurParDefaut() {
         Weapon weapon = new Weapon();
 
@@ -30,6 +40,7 @@ class WeaponTest {
     }
 
     @Test
+    @DisplayName("3: Getters et setters")
     void testGettersEtSetters() {
         Weapon weapon = new Weapon();
         weapon.setNom("Hache de guerre");
@@ -46,6 +57,7 @@ class WeaponTest {
     }
 
     @Test
+    @DisplayName("4: toString()")
     void testToString() {
         Weapon weapon = new Weapon("Couteau en diamant", 60, 1.0, 1);
         String result = weapon.toString();

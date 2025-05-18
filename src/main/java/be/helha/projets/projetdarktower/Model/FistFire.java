@@ -4,20 +4,19 @@ import java.util.Random;
 
 public class FistFire extends Personnage {
 
-    private static final double CHANCE_CRITIQUE = 0.4; // 40% de chance de faire un coup critique
+    private static final double CHANCE_CRITIQUE = 0.4; // 40% crit
 
     public FistFire(String id) {
-        super(id, "Fist Fire", 70, 40); // 70 PV et 40 ATK
+        super(id, "Fist Fire", 150, 60); // PV à 150, ATK à 60
     }
 
     @Override
     public int attaquer(Personnage cible) {
         int degats = this.attaque;
 
-        // Générer un nombre aléatoire entre 0 et 1
         Random random = new Random();
         if (random.nextDouble() < CHANCE_CRITIQUE) {
-            degats *= 2; // Si le nombre est inférieur à 0.4, coup critique
+            degats *= 2; // coup critique
             System.out.println(nom + " fait un coup critique !");
         }
 
@@ -29,15 +28,16 @@ public class FistFire extends Personnage {
 
     @Override
     public void resetPointDeVie() {
-        this.setPointsDeVie(70);
+        this.setPointsDeVie(150);
     }
 
     @Override
     public void setPointsDeVie(int pointsDeVie) {
-        if (pointsDeVie > 70) {
-            super.setPointsDeVie(70);
+        if (pointsDeVie > 150) {
+            super.setPointsDeVie(150);
         } else {
             super.setPointsDeVie(pointsDeVie);
         }
     }
 }
+

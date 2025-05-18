@@ -5,7 +5,10 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import java.util.Set;
 
@@ -21,7 +24,13 @@ class ItemSelectionRequestTest {
         validator = factory.getValidator();
     }
 
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
+    }
+
     @Test
+    @DisplayName("1: Test des getters et setters")
     void testGettersAndSetters() {
         ItemSelectionRequest request = new ItemSelectionRequest();
         request.setItemId("item123");
@@ -32,6 +41,7 @@ class ItemSelectionRequestTest {
     }
 
     @Test
+    @DisplayName("2: Validation - itemId ne doit pas être vide")
     void testValidationItemIdNotBlank() {
         ItemSelectionRequest request = new ItemSelectionRequest();
         request.setItemId("");  // Vide = invalide
@@ -46,6 +56,7 @@ class ItemSelectionRequestTest {
     }
 
     @Test
+    @DisplayName("3: Validation - itemId ne doit pas être null")
     void testValidationItemIdNull() {
         ItemSelectionRequest request = new ItemSelectionRequest();
         request.setItemId(null);  // Null = invalide
@@ -59,6 +70,7 @@ class ItemSelectionRequestTest {
     }
 
     @Test
+    @DisplayName("4: Validation - itemId valide")
     void testValidationItemIdValid() {
         ItemSelectionRequest request = new ItemSelectionRequest();
         request.setItemId("validId");
