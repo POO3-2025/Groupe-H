@@ -6,8 +6,8 @@ public class Minotaurus extends Personnage {
 
     public Minotaurus(String id, int niveau) {
         super(id, "Minotaurus",
-                80 + (int)(Math.pow(niveau, 1.5) * 3.5),
-                20 + (int)(Math.pow(niveau, 1.3) * 2.5));
+                50 + (int)(Math.pow(niveau, 1.5) * 2.0),
+                10 + (int)(Math.pow(niveau, 1.3) * 1.5));
         this.niveau = niveau;
     }
 
@@ -38,7 +38,7 @@ public class Minotaurus extends Personnage {
 
 
     public void resetPointsDeVie() {
-        this.setPointsDeVie(80 + (int)(Math.pow(this.niveau, 1.5) * 3.5));
+        this.setPointsDeVie(50 + (int)(Math.pow(niveau, 1.5) * 2.0));
     }
 
 

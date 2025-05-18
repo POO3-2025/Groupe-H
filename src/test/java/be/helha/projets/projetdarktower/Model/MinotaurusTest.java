@@ -31,8 +31,8 @@ class MinotaurusTest {
     @Test
     @DisplayName("1: Test d'initialisation des points de vie et attaque")
     void testInitialisation() {
-        int expectedPV = 80 + (int)(Math.pow(3, 1.5) * 3.5);
-        int expectedAtk = 20 + (int)(Math.pow(3, 1.3) * 2.5);
+        int expectedPV = 50 + (int)(Math.pow(3, 1.5) * 2.0);
+        int expectedAtk = 10 + (int)(Math.pow(3, 1.3) * 1.5);
         assertEquals(expectedPV, minotaurus.getPointsDeVie());
         assertEquals(expectedAtk, minotaurus.getAttaque());
         assertEquals(3, minotaurus.getNiveau());
@@ -50,7 +50,7 @@ class MinotaurusTest {
     void testResetPointsDeVie() {
         minotaurus.setPointsDeVie(10);
         minotaurus.resetPointsDeVie();
-        int expectedPV = 80 + (int)(Math.pow(minotaurus.getNiveau(), 1.5) * 3.5);
+        int expectedPV = 50 + (int)(Math.pow(minotaurus.getNiveau(), 1.5) * 2.0);
         assertEquals(expectedPV, minotaurus.getPointsDeVie());
     }
 
