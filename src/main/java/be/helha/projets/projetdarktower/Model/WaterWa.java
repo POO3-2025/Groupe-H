@@ -3,7 +3,7 @@ package be.helha.projets.projetdarktower.Model;
 public class WaterWa extends Personnage {
 
     public WaterWa(String id) {
-        super(id, "WaterWa", 220, 30); // PV 220, ATK 30
+        super(id, "WaterWa", 220, 30);
     }
 
     @Override

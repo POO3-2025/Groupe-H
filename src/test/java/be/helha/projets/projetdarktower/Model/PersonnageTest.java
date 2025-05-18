@@ -61,4 +61,11 @@ class PersonnageTest {
         personnage.resetPointDeVie();
         assertEquals(100, personnage.getPointsDeVie(), "resetPointDeVie() doit remettre les PV à 100");
     }
+
+    @Test
+    @DisplayName("4: Test que les PV négatifs sont remis à 0 dans getPointsDeVie()")
+    void testPointsDeVieNegatifs() {
+        personnage.setPointsDeVie(-10);
+        assertEquals(0, personnage.getPointsDeVie(), "Les PV négatifs doivent être ramenés à 0");
+    }
 }

@@ -14,12 +14,11 @@ public class CharacterService {
     private Map<String, Personnage> personnages = new HashMap<>();
 
     public CharacterService() {
-        // Ajoute les personnages
         personnages.put("fistfire", new FistFire("1"));
         personnages.put("waterwa", new WaterWa("2"));
         personnages.put("jowind", new JoWind("3"));
         personnages.put("twood", new TWood("4"));
-        personnages.put("Minotaurus", new Minotaurus("999",1)); // Personnage de test
+        personnages.put("Minotaurus", new Minotaurus("999",1));
 
           // On passe le niveau récupéré
     }

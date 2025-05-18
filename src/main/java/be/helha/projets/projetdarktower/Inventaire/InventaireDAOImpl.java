@@ -26,7 +26,7 @@ public class InventaireDAOImpl implements InventaireDAO {
     private final MongoCollection<Document> collection;
 
     public InventaireDAOImpl() {
-        this("MongoDBProduction"); // Par défaut prod
+        this("MongoDBProduction"); //Par Defaut prends MongoDBProduction
     }
 
     public InventaireDAOImpl(String dbKey) {
@@ -103,7 +103,6 @@ public class InventaireDAOImpl implements InventaireDAO {
         for (int i = 0; i < items.size(); i++) {
             if (items.get(i) == null) {
                 items.set(i, toDocument(item)); // Insertion de l’item
-                // Mise à jour dans MongoDB
                 Document update = new Document("$set", new Document("items", items));
                 collection.updateOne(query, update);
                 return true;
@@ -139,7 +138,7 @@ public class InventaireDAOImpl implements InventaireDAO {
                         if (nom != null) {
                             Item item = ItemFactory.creerItem(nom);
                             item.setId(itemDoc.getString("_id")); // Associe l'ID de l'item
-                            inventaire.add(item); // Ajoute l'item à l'inventaire
+                            inventaire.add(item);
                         }
                     }
                 }
@@ -163,7 +162,6 @@ public class InventaireDAOImpl implements InventaireDAO {
             if (obj instanceof List<?>) {
                 List<?> rawList = (List<?>) obj;
 
-                // On essaie de convertir en List<Document> en filtrant ou supposant que c'est bien le cas
                 List<Document> items = new ArrayList<>();
                 for (Object o : rawList) {
                     if (o instanceof Document) {
@@ -290,7 +288,6 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
     //MAJ LA DB APRES CHAQUE UTILISATION
-    // Dans la méthode `UseItem` de la classe `InventaireDAOImpl`
     private void decrementUsageInMongo(String itemId, int idPersonnage) {
         Document query = new Document("idPersonnage", idPersonnage);
         Document inventoryDoc = collection.find(query).first();
@@ -399,13 +396,12 @@ public class InventaireDAOImpl implements InventaireDAO {
                         " avec " + weapon.getNom() + " et inflige " + degats + " dégâts.";
                 itemSupprimeId = null;
 
-                // Décrémenter la durabilité de l'arme
                 decrementUsageInMongo(item.getId(), UserId);
 
                 int usagesRestants = RecupererUsageItem(item.getId(), UserId);
-                weapon.setUsages(usagesRestants); // Mise à jour locale des usages
+                weapon.setUsages(usagesRestants);
 
-                // Vérifie si les usages sont à 0 et supprime l'item
+
                 if (usagesRestants <= 0) {
                     DeleteItem(item.getId());
                     itemSupprimeId = item.getId(); // Indique que l'item a été supprimé
@@ -439,7 +435,7 @@ public class InventaireDAOImpl implements InventaireDAO {
                 if (o instanceof Document) {
                     items.add((Document) o);
                 } else {
-                    items.add(null);  // ou gérer différemment selon besoin
+                    items.add(null);
                 }
             }
 
@@ -450,7 +446,7 @@ public class InventaireDAOImpl implements InventaireDAO {
                 }
             }
 
-            // Chercher dans contenu des coffres
+
             for (Document item : items) {
                 if (item != null && "Coffre".equals(item.getString("type"))) {
                     Object objContenu = item.get("contenu");
@@ -490,7 +486,6 @@ public class InventaireDAOImpl implements InventaireDAO {
             return;
         }
 
-        // Crée une liste de 10 slots vides
         List<Object> items = new ArrayList<>(Collections.nCopies(10, null));
 
         Document inventaireDoc = new Document()
@@ -524,15 +519,17 @@ public class InventaireDAOImpl implements InventaireDAO {
                 .append("type", item.getType());
 
         if (item instanceof Weapon) {
+
             Weapon weapon = (Weapon) item;
             doc.append("degats", weapon.getDegats());
             doc.append("Usage_Time",weapon.getUsages());
         } else if (item instanceof Potion) {
+
             Potion potion = (Potion) item;
             doc.append("pointsDeVieRecuperes", potion.getPointsDeVieRecuperes());
             doc.append("Usage_Time",potion.getUsages());
         } else if (item instanceof Coffre) {
-            // Coffre vide avec 10 emplacements = liste de 10 null
+
             List<Object> contenuVide = new ArrayList<>(Collections.nCopies(10, null));
             doc.append("contenu", contenuVide);
         }
@@ -633,9 +630,6 @@ public class InventaireDAOImpl implements InventaireDAO {
                     return false;
                 }
 
-                // Debug avant ajout
-
-                int nbItemsAvant = (int) contenuCoffre.stream().filter(obj -> obj != null).count();
 
 
                 for (int i = 0; i < contenuCoffre.size(); i++) {
@@ -651,9 +645,6 @@ public class InventaireDAOImpl implements InventaireDAO {
                         break;
                     }
                 }
-
-                // Debug après ajout
-                int nbItemsApres = (int) contenuCoffre.stream().filter(obj -> obj != null).count();
 
                 if (ajouteDansCoffre) break;
             }

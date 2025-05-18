@@ -3,7 +3,7 @@ package be.helha.projets.projetdarktower.Model;
 public class TWood extends Personnage {
 
     public TWood(String id) {
-        super(id, "TWood", 90, 25);  // PV 90 (corrigé), ATK 25
+        super(id, "TWood", 90, 25);
     }
 
     @Override
@@ -22,7 +22,7 @@ public class TWood extends Personnage {
 
     @Override
     public void setPointsDeVie(int pointsDeVie) {
-        super.setPointsDeVie(Math.min(pointsDeVie, 90)); // Limite à 90
+        super.setPointsDeVie(Math.min(pointsDeVie, 90));
     }
 
     public void regenererPV() {
