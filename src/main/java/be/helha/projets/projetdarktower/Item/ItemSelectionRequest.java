@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 public class ItemSelectionRequest {
     @NotBlank(message = "L'ID de l'item ne peut pas être vide")
     private String itemId;
-    private String cibleId;  // Ce champ est optionnel
+    private String cibleId;  // Ce champ est optionel
 
     public String getItemId() {
         return itemId;

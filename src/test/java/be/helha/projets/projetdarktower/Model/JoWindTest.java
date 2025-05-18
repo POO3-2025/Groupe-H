@@ -8,60 +8,58 @@ import static org.junit.jupiter.api.Assertions.*;
 class JoWindTest {
 
     private JoWind joWind;
-    private DummyCible cible;
+    private Personnage cible;
 
     @BeforeEach
     void setUp() {
-        joWind = new JoWind("id_jo");
-        cible = new DummyCible("cible", 100);
+        joWind = new JoWind("J001");
+        // Personnage cible fictif (classe anonyme) pour tester
+        cible = new Personnage("C001", "Cible", 100, 20) {
+            @Override
+            public int attaquer(Personnage p) {
+                return 0; // inutile ici
+            }
+
+            @Override
+            public void resetPointDeVie() {
+                this.setPointsDeVie(100);
+            }
+        };
     }
 
     @Test
-    void testInitialisation() {
+    void testConstructeur() {
+        assertEquals("J001", joWind.getId());
         assertEquals("JoWind", joWind.getNom());
         assertEquals(110, joWind.getPointsDeVie());
         assertEquals(30, joWind.getAttaque());
     }
 
     @Test
+    void testAttaquer() {
+        int degats = joWind.attaquer(cible);
+        assertEquals(30, degats);
+        assertEquals(70, cible.getPointsDeVie()); // 100 - 30
+    }
+
+    @Test
     void testResetPointDeVie() {
-        joWind.setPointsDeVie(20);
+        joWind.setPointsDeVie(50);
+        assertEquals(50, joWind.getPointsDeVie());
+
         joWind.resetPointDeVie();
         assertEquals(110, joWind.getPointsDeVie());
     }
 
     @Test
-    void testSetPointsDeVieLimite() {
+    void testSetPointsDeVieMax() {
         joWind.setPointsDeVie(150);
-        assertEquals(110, joWind.getPointsDeVie(), "Les PV ne doivent pas dépasser 110");
-
-        joWind.setPointsDeVie(95);
-        assertEquals(95, joWind.getPointsDeVie());
+        assertEquals(110, joWind.getPointsDeVie()); // ne dépasse pas 110
     }
 
     @Test
-    void testAttaquer() {
-        int pvAvant = cible.getPointsDeVie();
-        int degatsInfliges = joWind.attaquer(cible);
-
-        assertEquals(30, degatsInfliges);
-        assertEquals(pvAvant - 30, cible.getPointsDeVie());
-    }
-
-    // Classe factice pour cible d'attaque
-    static class DummyCible extends Personnage {
-        public DummyCible(String id, int pointsDeVie) {
-            super(id, "Dummy", pointsDeVie, 0);
-        }
-
-        @Override
-        public int attaquer(Personnage cible) {
-            return 0;
-        }
-
-        @Override
-        public void resetPointDeVie() {
-            this.setPointsDeVie(100);
-        }
+    void testSetPointsDeVieNormal() {
+        joWind.setPointsDeVie(80);
+        assertEquals(80, joWind.getPointsDeVie());
     }
 }
