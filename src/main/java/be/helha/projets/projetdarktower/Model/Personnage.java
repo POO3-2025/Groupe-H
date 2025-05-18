@@ -23,6 +23,9 @@ public abstract class Personnage {
     }
 
     public int getPointsDeVie() {
+        if (this.pointsDeVie < 0) {
+            this.pointsDeVie = 0;
+        }
         return pointsDeVie;
     }
 
