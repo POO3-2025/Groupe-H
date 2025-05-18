@@ -617,6 +617,9 @@ public class LanternaCombat {
         lblMinotaurePV.setText(minotaureActuel.getNom() + " PV: " + minotaureActuel.getPointsDeVie());
         historyPanel.addComponent(new Label("\nVous avez infligé " + degatsJoueur + " dégats"));
         updateGui(gui);
+        try {
+            sleep(300);
+        } catch (InterruptedException ignored) {}
 
         if (minotaureActuel.getPointsDeVie() <= 0) {
             showEndCombat(gui, joueur, minotaureActuel, etage, tour,
@@ -632,6 +635,10 @@ public class LanternaCombat {
         int degatsMinotaure = minotaureActuel.attaquer(joueur);
         lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
         historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégats"));
+
+        try {
+            sleep(300);
+        } catch (InterruptedException ignored) {}
 
         tour.incrementer();
         lblTour.setText("Tour : " + tour.getTour());
@@ -704,6 +711,7 @@ public class LanternaCombat {
                         lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
                         historyPanel.addComponent(new Label("\nLe Minotaure vous a infligé " + degatsMinotaure + " dégâts"));
 
+                        try { Thread.sleep(300); } catch (InterruptedException ignored) {}
                         tour.incrementer();
                         lblTour.setText("Tour : " + tour.getTour());
 
