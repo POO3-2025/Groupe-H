@@ -18,41 +18,48 @@ repositories {
 }
 
 dependencies {
+    // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'io.projectreactor:reactor-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'com.googlecode.lanterna:lanterna:3.1.1'
+    implementation 'org.springframework.security:spring-security-crypto'
+
+    // MongoDB & JSON
     implementation 'org.mongodb:mongodb-driver-sync:4.9.0'
     implementation 'org.mongodb:mongodb-driver-core:4.9.0'
     implementation 'org.mongodb:bson:4.9.0'
-    implementation("com.google.code.gson:gson:2.13.1")
-    implementation 'io.jsonwebtoken:jjwt:0.9.1'
-    implementation 'mysql:mysql-connector-java:8.0.33'
-    implementation 'org.springframework.security:spring-security-crypto'
-    implementation("jakarta.validation:jakarta.validation-api:3.1.1")
+    implementation 'com.google.code.gson:gson:2.13.1'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'org.json:json:20210307'
 
-    // Test si nécessaire
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // Base de données
+    implementation 'mysql:mysql-connector-java:8.0.33'
+
+    // Terminal UI
+    implementation 'com.googlecode.lanterna:lanterna:3.1.1'
+
+    // Validation
+    implementation 'jakarta.validation:jakarta.validation-api:3.1.1'
+
+    // JWT
+    implementation 'io.jsonwebtoken:jjwt:0.9.1'
+
+    // XML binding (si nécessaire)
     implementation 'javax.xml.bind:jaxb-api:2.3.1'
 
-
-    implementation 'org.json:json:20210307'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
-
-    //
-    implementation 'com.googlecode.lanterna:lanterna:3.1.1'
+    // Tests
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    implementation 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
+    implementation 'org.glassfish:jakarta.el:4.0.2' // nécessaire pour les expressions EL comme dans @NotBlank
 
 }
 
 tasks.named('test') {
     useJUnitPlatform()
 }
+
 tasks.withType(JavaCompile) {
     options.compilerArgs << "-Xlint:deprecation"
 }
