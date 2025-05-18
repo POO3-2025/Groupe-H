@@ -54,6 +54,8 @@ dependencies {
     implementation 'org.hibernate.validator:hibernate-validator:8.0.1.Final'
     implementation 'org.glassfish:jakarta.el:4.0.2' // nécessaire pour les expressions EL comme dans @NotBlank
 
+
+
 }
 
 tasks.named('test') {
