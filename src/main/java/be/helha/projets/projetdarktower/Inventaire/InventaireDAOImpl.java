@@ -26,17 +26,20 @@ public class InventaireDAOImpl implements InventaireDAO {
     private final MongoCollection<Document> collection;
 
     public InventaireDAOImpl() {
-        // Utiliser DatabaseConnection singleton pour obtenir MongoDatabase
+        this("MongoDBProduction"); // Par défaut prod
+    }
+
+    public InventaireDAOImpl(String dbKey) {
         DatabaseConnection dbConn = DatabaseConnection.getInstance();
         MongoDatabase database;
         try {
-            database = dbConn.getMongoDatabase("MongoDBProduction");
+            database = dbConn.getMongoDatabase(dbKey);
         } catch (RuntimeException e) {
             throw new RuntimeException("Impossible de se connecter à MongoDB: " + e.getMessage());
         }
-
         this.collection = database.getCollection("Inventaire");
     }
+
 
     public boolean hasCoffreInInventory(int idPersonnage) {
         Document query = new Document("idPersonnage", idPersonnage);
@@ -52,17 +55,13 @@ public class InventaireDAOImpl implements InventaireDAO {
                         items.add((Document) o);
                     }
                 }
-                System.out.println("[hasCoffreInInventory] items size: " + items.size());
                 for (Document item : items) {
-                    System.out.println("[hasCoffreInInventory] item type: " + (item == null ? "null" : item.getString("type")));
                     if (item != null && "Coffre".equals(item.getString("type"))) {
-                        System.out.println("[hasCoffreInInventory] Coffre trouvé");
                         return true;
                     }
                 }
             }
         }
-        System.out.println("[hasCoffreInInventory] Coffre non trouvé");
         return false;
     }
 
@@ -74,13 +73,11 @@ public class InventaireDAOImpl implements InventaireDAO {
         Document inventaireDoc = collection.find(query).first();
 
         if (inventaireDoc == null) {
-            System.out.println("Aucun inventaire trouvé pour ce personnage.");
             return false;
         }
 
         Object objItems = inventaireDoc.get("items");
         if (!(objItems instanceof List<?>)) {
-            System.out.println("Le champ 'items' n'est pas une liste.");
             return false;
         }
 
@@ -96,7 +93,6 @@ public class InventaireDAOImpl implements InventaireDAO {
                 if (obj instanceof Document) {
                     Document doc = (Document) obj;
                     if ("Coffre".equals(doc.getString("type"))) {
-                        System.out.println("Un seul coffre est autorisé !");
                         return false;
                     }
                 }
@@ -114,7 +110,6 @@ public class InventaireDAOImpl implements InventaireDAO {
             }
         }
 
-        System.out.println("L'inventaire est plein !");
         return false;
     }
 
@@ -158,7 +153,7 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
     public Item recupererItemParId(String itemId, int idPersonnage) {
-        System.out.println("Recherche de l'item avec l'ID : " + itemId);
+
 
         Document inventoryDoc = collection.find(new Document("idPersonnage", idPersonnage)).first();
 
@@ -213,7 +208,6 @@ public class InventaireDAOImpl implements InventaireDAO {
             }
         }
 
-        System.out.println("Aucun item trouvé avec cet ID.");
         return null;
     }
 
@@ -435,7 +429,7 @@ public class InventaireDAOImpl implements InventaireDAO {
         if (inventory != null) {
             Object objItems = inventory.get("items");
             if (!(objItems instanceof List<?>)) {
-                System.out.println("Format d'inventaire incorrect pour idPersonnage = " + idPersonnage);
+
                 return 0;
             }
 
@@ -504,7 +498,7 @@ public class InventaireDAOImpl implements InventaireDAO {
                 .append("items", items);
 
         collection.insertOne(inventaireDoc);
-        System.out.println("Inventaire vide initialisé pour le personnage " + idPersonnage);
+
     }
 
     public void viderInventaire(int idPersonnage) {
@@ -518,7 +512,7 @@ public class InventaireDAOImpl implements InventaireDAO {
 
         Document update = new Document("$set", new Document("items", Collections.nCopies(10, null)));
         collection.updateOne(query, update);
-        System.out.println("Inventaire vidé pour le personnage " + idPersonnage);
+
     }
 
 
@@ -615,7 +609,7 @@ public class InventaireDAOImpl implements InventaireDAO {
         Document inventaireDoc = collection.find(query).first();
 
         if (inventaireDoc == null) {
-            System.out.println("[ajouterItemDansCoffre] Aucun inventaire trouvé pour ce personnage.");
+
             return false;
         }
 
@@ -635,14 +629,14 @@ public class InventaireDAOImpl implements InventaireDAO {
                 List<Object> contenuCoffre = (List<Object>) doc.get("contenu");
 
                 if (contenuCoffre == null) {
-                    System.out.println("[ajouterItemDansCoffre] Contenu coffre invalide.");
+
                     return false;
                 }
 
                 // Debug avant ajout
-                System.out.println("[ajouterItemDansCoffre] Taille contenu coffre avant ajout : " + contenuCoffre.size());
+
                 int nbItemsAvant = (int) contenuCoffre.stream().filter(obj -> obj != null).count();
-                System.out.println("[ajouterItemDansCoffre] Nombre d'items dans coffre avant ajout : " + nbItemsAvant);
+
 
                 for (int i = 0; i < contenuCoffre.size(); i++) {
                     if (contenuCoffre.get(i) == null) {
@@ -654,21 +648,19 @@ public class InventaireDAOImpl implements InventaireDAO {
                         items.set(index, doc);
 
                         ajouteDansCoffre = true;
-                        System.out.println("[ajouterItemDansCoffre] Item ajouté dans coffre à la position " + i);
                         break;
                     }
                 }
 
                 // Debug après ajout
                 int nbItemsApres = (int) contenuCoffre.stream().filter(obj -> obj != null).count();
-                System.out.println("[ajouterItemDansCoffre] Nombre d'items dans coffre après ajout : " + nbItemsApres);
 
                 if (ajouteDansCoffre) break;
             }
         }
 
         if (!ajouteDansCoffre) {
-            System.out.println("[ajouterItemDansCoffre] Pas de place dans le coffre ou coffre inexistant.");
+
             return false;
         }
 
@@ -678,14 +670,12 @@ public class InventaireDAOImpl implements InventaireDAO {
             if (obj instanceof Document docItem) {
                 if (item.getId().equals(docItem.getString("_id"))) {
                     items.set(i, null);
-                    System.out.println("[ajouterItemDansCoffre] Item supprimé de l'inventaire principal à la position " + i);
                     break;
                 }
             }
         }
 
         Document update = new Document("$set", new Document("items", items));
-        System.out.println("[DEBUG] Items complets avant update :");
         for (Document d : items) {
             if (d == null) {
                 System.out.println("null slot");
@@ -695,12 +685,6 @@ public class InventaireDAOImpl implements InventaireDAO {
         }
         collection.updateOne(query, update);
 
-        Document inventaireActualise = collection.find(query).first();
-        System.out.println("[DEBUG] Inventaire après update:");
-        System.out.println(inventaireActualise.toJson());
-
-
-        System.out.println("[ajouterItemDansCoffre] Inventaire mis à jour dans MongoDB.");
 
         return true;
     }

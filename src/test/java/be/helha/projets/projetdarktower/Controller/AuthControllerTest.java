@@ -5,8 +5,7 @@ import be.helha.projets.projetdarktower.Model.LoginResponse;
 import be.helha.projets.projetdarktower.Model.User;
 import be.helha.projets.projetdarktower.Security.JwtUtil;
 import be.helha.projets.projetdarktower.Service.UserService;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,9 +29,15 @@ public class AuthControllerTest {
         MockitoAnnotations.openMocks(this);
     }
 
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
+    }
+
     // ======= REGISTER TESTS =======
 
     @Test
+    @DisplayName("1: Échec de l'inscription si utilisateur existe déjà")
     public void testRegister_UserAlreadyExists() {
         User user = new User();
         user.setUsername("testuser");
@@ -46,6 +51,7 @@ public class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("2: Inscription réussie d'un nouvel utilisateur")
     public void testRegister_Success() {
         User user = new User();
         user.setUsername("newuser");
@@ -62,6 +68,7 @@ public class AuthControllerTest {
     // ======= LOGIN TESTS =======
 
     @Test
+    @DisplayName("3: Échec connexion - utilisateur non trouvé")
     public void testAuthenticateUser_UserNotFound() {
         LoginRequest request = new LoginRequest("unknown", "password");
 
@@ -74,6 +81,7 @@ public class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("4: Échec connexion - mauvais mot de passe")
     public void testAuthenticateUser_WrongPassword() {
         LoginRequest request = new LoginRequest("user", "wrongpass");
         User user = new User();
@@ -89,10 +97,11 @@ public class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("5: Connexion réussie avec JWT")
     public void testAuthenticateUser_Success() {
         LoginRequest request = new LoginRequest("user", "pass");
         User user = new User();
-        user.setId(1L);  // id en int
+        user.setId(1L);
         user.setUsername("user");
         user.setIsLoggedIn(1);
 
@@ -106,7 +115,7 @@ public class AuthControllerTest {
 
         LoginResponse loginResponse = (LoginResponse) response.getBody();
         assertNotNull(loginResponse);
-        assertEquals(1, loginResponse.getUserId());  // getter getUserId() en int
+        assertEquals(1, loginResponse.getUserId());
         assertEquals("user", loginResponse.getUsername());
         assertEquals("fake-jwt-token", loginResponse.getToken());
         assertEquals(1, loginResponse.getIsLoggedIn());
@@ -115,8 +124,9 @@ public class AuthControllerTest {
     // ======= UPDATE IS LOGGED TEST =======
 
     @Test
+    @DisplayName("6: Mise à jour réussie du statut isLogged")
     public void testUpdateIsLogged_Success() {
-        doNothing().when(userService).updateIsLogged(1, 1);  // id en int
+        doNothing().when(userService).updateIsLogged(1, 1);
 
         ResponseEntity<String> response = authController.updateIsLogged(1, 1);
 
@@ -125,6 +135,7 @@ public class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("7: Échec mise à jour statut isLogged avec exception")
     public void testUpdateIsLogged_Failure() {
         doThrow(new RuntimeException("DB error")).when(userService).updateIsLogged(1, 1);
 

@@ -1,8 +1,10 @@
 package be.helha.projets.projetdarktower.Model;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,7 +23,13 @@ class MinotaurusTest {
         joWind = new JoWind("jo1");
     }
 
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
+    }
+
     @Test
+    @DisplayName("1: Test d'initialisation des points de vie et attaque")
     void testInitialisation() {
         int expectedPV = 80 + (int)(Math.pow(3, 1.5) * 3.5);
         int expectedAtk = 20 + (int)(Math.pow(3, 1.3) * 2.5);
@@ -31,12 +39,14 @@ class MinotaurusTest {
     }
 
     @Test
+    @DisplayName("2: Test setter du niveau")
     void testSetNiveau() {
         minotaurus.setNiveau(5);
         assertEquals(5, minotaurus.getNiveau());
     }
 
     @Test
+    @DisplayName("3: Test reset des points de vie")
     void testResetPointsDeVie() {
         minotaurus.setPointsDeVie(10);
         minotaurus.resetPointsDeVie();
@@ -45,6 +55,7 @@ class MinotaurusTest {
     }
 
     @Test
+    @DisplayName("4: Attaque sur cible neutre")
     void testAttaquerCibleNeutre() {
         int pvAvant = cibleNeutre.getPointsDeVie();
         int degats = minotaurus.attaquer(cibleNeutre);
@@ -54,21 +65,21 @@ class MinotaurusTest {
     }
 
     @Test
+    @DisplayName("5: Attaque sur WaterWa (dégâts divisés par 2)")
     void testAttaquerWaterWa() {
         int pvAvant = waterWa.getPointsDeVie();
         int degats = minotaurus.attaquer(waterWa);
 
-        // Dégats doivent être divisés par 2
         assertEquals(minotaurus.getAttaque() / 2, degats);
         assertEquals(pvAvant - degats, waterWa.getPointsDeVie());
     }
 
     @RepeatedTest(20)
+    @DisplayName("6: Attaque sur JoWind avec esquive possible")
     void testAttaquerJoWindAvecEsquivePossible() {
         int pvAvant = joWind.getPointsDeVie();
         int degats = minotaurus.attaquer(joWind);
 
-        // Degats soit 0 (esquive) ou attaque normale
         assertTrue(degats == 0 || degats == minotaurus.getAttaque());
 
         int expectedPV = degats == 0 ? pvAvant : pvAvant - degats;

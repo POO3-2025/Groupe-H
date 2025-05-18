@@ -1,12 +1,21 @@
 package be.helha.projets.projetdarktower.Model;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class LoginRequestTest {
 
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
+    }
+
     @Test
+    @DisplayName("1: Constructeur par défaut et setters")
     void testConstructeurParDefautEtSetters() {
         LoginRequest request = new LoginRequest();
         request.setUsername("testuser");
@@ -17,6 +26,7 @@ class LoginRequestTest {
     }
 
     @Test
+    @DisplayName("2: Constructeur avec paramètres")
     void testConstructeurAvecParametres() {
         LoginRequest request = new LoginRequest("admin", "secure123");
 
@@ -25,6 +35,7 @@ class LoginRequestTest {
     }
 
     @Test
+    @DisplayName("3: Modification des champs")
     void testModificationsDesChamps() {
         LoginRequest request = new LoginRequest("john", "1234");
         request.setUsername("doe");

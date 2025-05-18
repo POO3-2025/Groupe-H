@@ -14,14 +14,26 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * Classe singleton pour gérer la connexion aux bases MySQL et MongoDB
- * à partir du fichier JSON config.json
+ * Singleton pour gérer la connexion aux bases de données MySQL et MongoDB.
+ *
+ * <p>Les informations de configuration sont chargées depuis un fichier JSON nommé {@code config.json}
+ * situé dans le classpath.</p>
+ *
+ * <p>Cette classe permet d'obtenir une connexion JDBC SQL ou un accès à une base MongoDB
+ * selon les paramètres spécifiés dans le fichier de configuration.</p>
  */
 public class DatabaseConnection {
 
+    /** Instance unique (singleton) de la classe */
     private static DatabaseConnection instance;
+
+    /** Objet JSON contenant la configuration chargée */
     private JsonObject config;
 
+    /**
+     * Constructeur privé qui charge la configuration depuis {@code config.json}.
+     * Lance une RuntimeException si le fichier est absent ou mal formé.
+     */
     private DatabaseConnection() {
         try {
             Gson gson = new Gson();
@@ -37,6 +49,11 @@ public class DatabaseConnection {
         }
     }
 
+    /**
+     * Retourne l'instance unique de DatabaseConnection (singleton).
+     *
+     * @return instance unique de DatabaseConnection
+     */
     public static DatabaseConnection getInstance() {
         if (instance == null) {
             synchronized (DatabaseConnection.class) {
@@ -48,10 +65,22 @@ public class DatabaseConnection {
         return instance;
     }
 
+    /**
+     * Retourne l'objet JSON contenant la configuration complète.
+     *
+     * @return configuration JSON
+     */
     public JsonObject getConfig() {
         return config;
     }
 
+    /**
+     * Obtient une connexion JDBC SQL à partir d'une clé de configuration.
+     *
+     * @param dbKey clé correspondant à la configuration de la base dans config.json
+     * @return connexion JDBC à la base SQL
+     * @throws SQLException si une erreur survient lors de la création de la connexion ou clé inconnue
+     */
     public Connection getSQLConnection(String dbKey) throws SQLException {
         try {
             JsonObject db = config.getAsJsonObject("db");
@@ -77,6 +106,13 @@ public class DatabaseConnection {
         }
     }
 
+    /**
+     * Obtient une instance MongoDatabase à partir d'une clé de configuration.
+     *
+     * @param dbKey clé correspondant à la configuration de la base MongoDB dans config.json
+     * @return instance de MongoDatabase connectée à la base spécifiée
+     * @throws RuntimeException en cas d'erreur de connexion ou clé inconnue
+     */
     public MongoDatabase getMongoDatabase(String dbKey) {
         try {
             JsonObject db = config.getAsJsonObject("db");

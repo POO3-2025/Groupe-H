@@ -2,7 +2,9 @@ package be.helha.projets.projetdarktower.Item;
 
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import java.util.List;
 
@@ -17,7 +19,13 @@ class CoffreTest {
         coffre = new Coffre("Coffre test", 30.0);
     }
 
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
+    }
+
     @Test
+    @DisplayName("1: Constructeur avec paramètres")
     void testConstructeurAvecParametres() {
         assertEquals("Coffre test", coffre.getNom());
         assertEquals("Coffre", coffre.getType());
@@ -27,6 +35,7 @@ class CoffreTest {
     }
 
     @Test
+    @DisplayName("2: Constructeur par défaut")
     void testConstructeurParDefaut() {
         Coffre coffreDefaut = new Coffre();
         assertEquals("Coffre", coffreDefaut.getType());
@@ -34,8 +43,8 @@ class CoffreTest {
         assertTrue(coffreDefaut.getContenu().isEmpty());
     }
 
-    // Si tu as une méthode ajouterItem dans Coffre, teste-la, sinon ignore ce test ou crée-la
     @Test
+    @DisplayName("3: Ajouter un item dans le coffre")
     void testAjouterItem() {
         Potion potion = new Potion("Petite potion", 20, 50.0, 1);
         assertTrue(coffre.ajouterItem(potion));  // cette méthode doit exister
@@ -45,6 +54,7 @@ class CoffreTest {
     }
 
     @Test
+    @DisplayName("4: Tester la capacité maximale du coffre")
     void testCapaciteMax() {
         for (int i = 0; i < 10; i++) {
             assertTrue(coffre.ajouterItem(new Potion("Potion " + i, 10, 10.0, 1)));
@@ -53,8 +63,8 @@ class CoffreTest {
         assertFalse(coffre.ajouterItem(new Potion("Trop", 10, 10.0, 1)));
     }
 
-    // Si tu as une méthode retirerItem(index), teste-la, sinon ignore ou crée-la
     @Test
+    @DisplayName("5: Retirer un item par index valide")
     void testRetirerItem() {
         Weapon weapon = new Weapon("Epée", 15, 10.0, 2);
         coffre.ajouterItem(weapon);
@@ -63,12 +73,14 @@ class CoffreTest {
     }
 
     @Test
+    @DisplayName("6: Retirer un item avec index invalide")
     void testRetirerItemIndexInvalide() {
         assertFalse(coffre.retirerItem(0));
         assertFalse(coffre.retirerItem(-1));
     }
 
     @Test
+    @DisplayName("7: Vérifier estVide et estPlein")
     void testEstVideEtEstPlein() {
         assertTrue(coffre.estVide());
         assertFalse(coffre.estPlein());
@@ -82,6 +94,7 @@ class CoffreTest {
     }
 
     @Test
+    @DisplayName("8: Test toString")
     void testToString() {
         coffre.ajouterItem(new Potion("Potion magique", 50, 15.0, 1));
         String output = coffre.toString();
@@ -90,6 +103,7 @@ class CoffreTest {
     }
 
     @Test
+    @DisplayName("9: Test toDocument")
     void testToDocument() {
         Potion potion = new Potion("Vie+", 50, 20.0, 1);
         Weapon weapon = new Weapon("Hache", 30, 15.0, 2);

@@ -642,7 +642,10 @@ public class LanternaCombat {
                     window, mainPanel);
         }
         if (joueur instanceof TWood) {
-            ((TWood) joueur).regenererPV();
+            int pvjoueur = joueur.getPointsDeVie() + 15;
+            joueur.setPointsDeVie(pvjoueur);
+            historyPanel.addComponent(new Label("\nVous avez régénerer 15 PV"));
+            lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
         }
 
         try {
@@ -711,8 +714,9 @@ public class LanternaCombat {
                         }
 
                         if (joueur instanceof TWood) {
-                            int pvjoueur = joueur.getPointsDeVie() + 10;
+                            int pvjoueur = joueur.getPointsDeVie() + 15;
                             joueur.setPointsDeVie(pvjoueur);
+                            historyPanel.addComponent(new Label("\nVous avez régénerer 15 PV"));
                             lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
                         }
 
@@ -778,8 +782,9 @@ public class LanternaCombat {
                                         }
 
                                         if (joueur instanceof TWood) {
-                                            int pvjoueur = joueur.getPointsDeVie() + 10;
+                                            int pvjoueur = joueur.getPointsDeVie() + 15;
                                             joueur.setPointsDeVie(pvjoueur);
+                                            historyPanel.addComponent(new Label("\nVous avez régénerer 15 PV"));
                                             lblJoueurPV.setText(joueur.getNom() + " PV: " + joueur.getPointsDeVie());
                                         }
 
@@ -1197,7 +1202,7 @@ public class LanternaCombat {
             passifsMessage.append("- Passif: Diminution des dégats subis par 2\n");
         }
         if (personnage instanceof TWood) {
-            passifsMessage.append("-Passif: Regénére 10 PV après chaque tour");
+            passifsMessage.append("-Passif: Regénére 15 PV après chaque tour");
         }
 
         return passifsMessage.toString();

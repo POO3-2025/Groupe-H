@@ -4,8 +4,7 @@ import be.helha.projets.projetdarktower.Model.CharacterSelectionRequest;
 import be.helha.projets.projetdarktower.Model.Personnage;
 import be.helha.projets.projetdarktower.Service.CharacterService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -18,26 +17,31 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(CharacterController.class)
-@Import(CharacterControllerTest.TestConfig.class)  // Importe la config pour injecter les mocks
+@Import(CharacterControllerTest.TestConfig.class)
 public class CharacterControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Autowired
-    private CharacterService characterService; // Injecté manuellement via TestConfig
+    private CharacterService characterService;
 
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        Mockito.reset(characterService); // reset les mocks avant chaque test
+        Mockito.reset(characterService);
+    }
+
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
     }
 
     @Test
+    @DisplayName("1: Sélectionner un personnage avec succès")
     void testSelectCharacter_Success() throws Exception {
-        // Création d'un personnage fictif - on crée une classe concrète si Personnage est abstrait
         Personnage personnage = new PersonnageConcret();
         personnage.setNom("Chevalier");
 
@@ -55,6 +59,7 @@ public class CharacterControllerTest {
     }
 
     @Test
+    @DisplayName("2: Échec de sélection - personnage non trouvé")
     void testSelectCharacter_NotFound() throws Exception {
         CharacterSelectionRequest request = new CharacterSelectionRequest();
         request.setCharacterId("999");
@@ -69,18 +74,19 @@ public class CharacterControllerTest {
                 .andExpect(content().string("Personnage non trouvé."));
     }
 
-    // Classe concrète pour instancier Personnage abstrait si besoin
+    // Classe concrète pour Personnage abstrait
     private static class PersonnageConcret extends Personnage {
         public PersonnageConcret() {
             super("id", "nom", 100, 10);
         }
+
         @Override
         public int attaquer(Personnage cible) {
-            return 0; // implementation fictive
+            return 0;
         }
     }
 
-    // Configuration test pour créer manuellement les mocks au lieu de @MockBean
+    // Config test pour mock manuel
     static class TestConfig {
         @Bean
         public CharacterService characterService() {

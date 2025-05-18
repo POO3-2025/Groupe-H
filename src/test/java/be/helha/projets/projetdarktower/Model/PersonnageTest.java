@@ -1,7 +1,9 @@
 package be.helha.projets.projetdarktower.Model;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,7 +27,13 @@ class PersonnageTest {
         };
     }
 
+    @BeforeEach
+    public void displayTestName(TestInfo testInfo) {
+        System.out.println("Exécution du test : " + testInfo.getDisplayName());
+    }
+
     @Test
+    @DisplayName("1: Test des getters")
     void testGetters() {
         assertEquals("ID123", personnage.getId());
         assertEquals("Testo", personnage.getNom());
@@ -34,6 +42,7 @@ class PersonnageTest {
     }
 
     @Test
+    @DisplayName("2: Test des setters")
     void testSetters() {
         personnage.setNom("NouveauNom");
         assertEquals("NouveauNom", personnage.getNom());
@@ -46,6 +55,7 @@ class PersonnageTest {
     }
 
     @Test
+    @DisplayName("3: Test reset des points de vie")
     void testResetPointDeVie() {
         personnage.setPointsDeVie(50);
         personnage.resetPointDeVie();
