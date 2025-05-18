@@ -56,9 +56,11 @@ public class AuthController {
             userService.updateIsLogged(userId, isLogged);
             return ResponseEntity.ok("Statut de connexion mis à jour avec succès.");
         } catch (Exception e) {
+            e.printStackTrace(); // Affiche dans la console
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Erreur lors de la mise à jour du statut de connexion : " + e.getMessage());
+                    .body("Erreur lors de la mise à jour du statut de connexion : " + e.toString());
         }
+
     }
 
 }

@@ -256,9 +256,9 @@ public class LanternaCombat {
         }));
         panel.addComponent(new Button("Déconnexion", () -> {
             window.close();
+            updateIsLoggedIn(userId, 0);
             isLoggedIn = false;
             jwtToken = null;
-            updateIsLoggedIn(userId, 0);
             MessageDialog.showMessageDialog(gui, "Info", "Déconnecté avec succès.");
         }));
 
@@ -304,7 +304,7 @@ public class LanternaCombat {
 
             String passifsMessage = getPassifsMessage(selectedPersonnage);
             if (!passifsMessage.isEmpty()) {
-                message += "\n- Passifs : \n" + passifsMessage;
+                message += "\n" + passifsMessage;
             }
 
             Button BtnItem = new Button("suivant", () -> {
@@ -1158,7 +1158,9 @@ public class LanternaCombat {
 
     public static void envoyerChoixPersonnage(String characterId, int userId, String jwtToken) {
         try {
-            URL url = new URL("http://localhost:8080/characters/select");
+            URI uri = new URI("http://localhost:8080/characters/select");
+            URL url = uri.toURL();
+
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
@@ -1177,7 +1179,7 @@ public class LanternaCombat {
                 System.err.println("Erreur lors de la sélection du personnage.");
             }
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
