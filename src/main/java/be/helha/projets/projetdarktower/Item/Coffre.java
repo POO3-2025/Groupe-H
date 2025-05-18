@@ -22,23 +22,19 @@ public class Coffre extends Item {
         this.contenu = new ArrayList<>();
     }
 
-    public boolean ajouterItem(Item item) {
-        if (contenu.size() >= CAPACITE_MAX) return false;
-        if (item instanceof Coffre) return false;
-        contenu.add(item);
-        return true;
-    }
-
-    public boolean retirerItem(int index) {
-        if (index >= 0 && index < contenu.size()) {
-            contenu.remove(index);
-            return true;
-        }
-        return false;
-    }
 
     public List<Item> getContenu() {
         return new ArrayList<>(contenu);
+    }
+    public boolean ajouterItem(Item item) {
+        if (estPlein() || (item instanceof Coffre)) return false;
+        return contenu.add(item);
+    }
+
+    public boolean retirerItem(int index) {
+        if (index < 0 || index >= contenu.size()) return false;
+        contenu.remove(index);
+        return true;
     }
 
     public boolean estPlein() {
@@ -48,6 +44,8 @@ public class Coffre extends Item {
     public boolean estVide() {
         return contenu.isEmpty();
     }
+
+
 
     @Override
     public String toString() {
@@ -62,6 +60,7 @@ public class Coffre extends Item {
         sb.append("}");
         return sb.toString();
     }
+
 
     // Méthode toDocument : convertit le Coffre en Document MongoDB
     public Document toDocument() {

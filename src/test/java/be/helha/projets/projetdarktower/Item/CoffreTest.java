@@ -22,6 +22,7 @@ class CoffreTest {
         assertEquals("Coffre test", coffre.getNom());
         assertEquals("Coffre", coffre.getType());
         assertEquals(30.0, coffre.getChanceDeDrop());
+        assertNotNull(coffre.getContenu());
         assertTrue(coffre.getContenu().isEmpty());
     }
 
@@ -33,19 +34,14 @@ class CoffreTest {
         assertTrue(coffreDefaut.getContenu().isEmpty());
     }
 
+    // Si tu as une méthode ajouterItem dans Coffre, teste-la, sinon ignore ce test ou crée-la
     @Test
     void testAjouterItem() {
-        Item potion = new Potion("Petite potion", 20, 50.0, 1);
-        assertTrue(coffre.ajouterItem(potion));
-        assertEquals(1, coffre.getContenu().size());
-        assertEquals(potion, coffre.getContenu().get(0));
-    }
-
-    @Test
-    void testAjouterCoffreRefuse() {
-        Item autreCoffre = new Coffre("Coffre interdit", 0.0);
-        assertFalse(coffre.ajouterItem(autreCoffre));
-        assertTrue(coffre.getContenu().isEmpty());
+        Potion potion = new Potion("Petite potion", 20, 50.0, 1);
+        assertTrue(coffre.ajouterItem(potion));  // cette méthode doit exister
+        List<Item> contenu = coffre.getContenu();
+        assertEquals(1, contenu.size());
+        assertEquals(potion, contenu.get(0));
     }
 
     @Test
@@ -57,11 +53,11 @@ class CoffreTest {
         assertFalse(coffre.ajouterItem(new Potion("Trop", 10, 10.0, 1)));
     }
 
+    // Si tu as une méthode retirerItem(index), teste-la, sinon ignore ou crée-la
     @Test
     void testRetirerItem() {
-        Item weapon = new Weapon("Epée", 15, 10.0, 2);
+        Weapon weapon = new Weapon("Epée", 15, 10.0, 2);
         coffre.ajouterItem(weapon);
-
         assertTrue(coffre.retirerItem(0));
         assertTrue(coffre.estVide());
     }

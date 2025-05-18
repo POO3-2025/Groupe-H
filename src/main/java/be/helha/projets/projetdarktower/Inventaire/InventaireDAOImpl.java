@@ -43,9 +43,16 @@ public class InventaireDAOImpl implements InventaireDAO {
         Document userInventory = collection.find(query).first();
 
         if (userInventory != null) {
-            List<Document> items = (List<Document>) userInventory.get("items");
-            System.out.println("[hasCoffreInInventory] items size: " + (items == null ? "null" : items.size()));
-            if (items != null) {
+            Object obj = userInventory.get("items");
+            if (obj instanceof List<?>) {
+                List<?> rawList = (List<?>) obj;
+                List<Document> items = new ArrayList<>();
+                for (Object o : rawList) {
+                    if (o instanceof Document) {
+                        items.add((Document) o);
+                    }
+                }
+                System.out.println("[hasCoffreInInventory] items size: " + items.size());
                 for (Document item : items) {
                     System.out.println("[hasCoffreInInventory] item type: " + (item == null ? "null" : item.getString("type")));
                     if (item != null && "Coffre".equals(item.getString("type"))) {
@@ -71,7 +78,17 @@ public class InventaireDAOImpl implements InventaireDAO {
             return false;
         }
 
-        List<Object> items = (List<Object>) inventaireDoc.get("items");
+        Object objItems = inventaireDoc.get("items");
+        if (!(objItems instanceof List<?>)) {
+            System.out.println("Le champ 'items' n'est pas une liste.");
+            return false;
+        }
+
+        List<?> rawItems = (List<?>) objItems;
+        List<Object> items = new ArrayList<>(rawItems.size());
+        for (Object o : rawItems) {
+            items.add(o);
+        }
 
         // Vérifie qu’il n’y ait pas déjà un coffre
         if (item instanceof Coffre) {
@@ -100,6 +117,7 @@ public class InventaireDAOImpl implements InventaireDAO {
         System.out.println("L'inventaire est plein !");
         return false;
     }
+
 
 
     public List<Item> chargerInventaire(int idPersonnage) {
@@ -142,33 +160,52 @@ public class InventaireDAOImpl implements InventaireDAO {
     public Item recupererItemParId(String itemId, int idPersonnage) {
         System.out.println("Recherche de l'item avec l'ID : " + itemId);
 
-        // Récupère le document complet du personnage
         Document inventoryDoc = collection.find(new Document("idPersonnage", idPersonnage)).first();
 
         if (inventoryDoc != null) {
-            List<Document> items = (List<Document>) inventoryDoc.get("items");
+            Object obj = inventoryDoc.get("items");
 
-            // Chercher dans inventaire principal
-            for (Document doc : items) {
-                if (doc != null && itemId.equals(doc.getString("_id"))) {
-                    String nom = doc.getString("nom");
-                    Item item = ItemFactory.creerItem(nom);
-                    item.setId(doc.getString("_id"));
-                    return item;
+            if (obj instanceof List<?>) {
+                List<?> rawList = (List<?>) obj;
+
+                // On essaie de convertir en List<Document> en filtrant ou supposant que c'est bien le cas
+                List<Document> items = new ArrayList<>();
+                for (Object o : rawList) {
+                    if (o instanceof Document) {
+                        items.add((Document) o);
+                    }
                 }
-            }
 
-            // Chercher dans contenu des coffres
-            for (Document doc : items) {
-                if (doc != null && "Coffre".equals(doc.getString("type"))) {
-                    List<Document> contenu = (List<Document>) doc.get("contenu");
-                    if (contenu != null) {
-                        for (Document itemDoc : contenu) {
-                            if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
-                                String nom = itemDoc.getString("nom");
-                                Item item = ItemFactory.creerItem(nom);
-                                item.setId(itemDoc.getString("_id"));
-                                return item;
+                // Chercher dans inventaire principal
+                for (Document doc : items) {
+                    if (doc != null && itemId.equals(doc.getString("_id"))) {
+                        String nom = doc.getString("nom");
+                        Item item = ItemFactory.creerItem(nom);
+                        item.setId(doc.getString("_id"));
+                        return item;
+                    }
+                }
+
+                // Chercher dans contenu des coffres
+                for (Document doc : items) {
+                    if (doc != null && "Coffre".equals(doc.getString("type"))) {
+                        Object contenuObj = doc.get("contenu");
+                        if (contenuObj instanceof List<?>) {
+                            List<?> rawContenu = (List<?>) contenuObj;
+                            List<Document> contenu = new ArrayList<>();
+                            for (Object o : rawContenu) {
+                                if (o instanceof Document) {
+                                    contenu.add((Document) o);
+                                }
+                            }
+
+                            for (Document itemDoc : contenu) {
+                                if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
+                                    String nom = itemDoc.getString("nom");
+                                    Item item = ItemFactory.creerItem(nom);
+                                    item.setId(itemDoc.getString("_id"));
+                                    return item;
+                                }
                             }
                         }
                     }
@@ -181,18 +218,22 @@ public class InventaireDAOImpl implements InventaireDAO {
     }
 
 
-
-
-
-
-
-
     public String DeleteItem(String itemId) {
         // Parcourt chaque inventaire
         FindIterable<Document> allInventories = collection.find();
 
         for (Document inventory : allInventories) {
-            List<Object> items = (List<Object>) inventory.get("items");
+            Object objItems = inventory.get("items");
+
+            if (!(objItems instanceof List<?>)) {
+                continue; // passe au suivant si ce n'est pas une liste
+            }
+
+            List<?> rawItems = (List<?>) objItems;
+            List<Object> items = new ArrayList<>();
+            for (Object o : rawItems) {
+                items.add(o);
+            }
 
             boolean updated = false;
 
@@ -212,16 +253,27 @@ public class InventaireDAOImpl implements InventaireDAO {
 
                     // Si item est un coffre, cherche dans contenu
                     if ("Coffre".equals(itemDoc.getString("type"))) {
-                        List<Object> contenu = (List<Object>) itemDoc.get("contenu");
-                        for (int j = 0; j < contenu.size(); j++) {
-                            Object objContenu = contenu.get(j);
-                            if (objContenu instanceof Document) {
-                                Document docContenu = (Document) objContenu;
-                                if (itemId.equals(docContenu.getString("_id"))) {
-                                    // Supprime item dans coffre
-                                    contenu.set(j, null);
-                                    updated = true;
-                                    break;
+                        Object objContenu = itemDoc.get("contenu");
+
+                        if (objContenu instanceof List<?>) {
+                            List<?> rawContenu = (List<?>) objContenu;
+                            List<Object> contenu = new ArrayList<>();
+                            for (Object oCont : rawContenu) {
+                                contenu.add(oCont);
+                            }
+
+                            for (int j = 0; j < contenu.size(); j++) {
+                                Object objContenuItem = contenu.get(j);
+                                if (objContenuItem instanceof Document) {
+                                    Document docContenu = (Document) objContenuItem;
+                                    if (itemId.equals(docContenu.getString("_id"))) {
+                                        // Supprime item dans coffre
+                                        contenu.set(j, null);
+                                        // Met à jour la liste "contenu" dans l'objet itemDoc
+                                        itemDoc.put("contenu", contenu);
+                                        updated = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -242,6 +294,7 @@ public class InventaireDAOImpl implements InventaireDAO {
         return "Aucun item trouvé avec l'ID " + itemId + ".";
     }
 
+
     //MAJ LA DB APRES CHAQUE UTILISATION
     // Dans la méthode `UseItem` de la classe `InventaireDAOImpl`
     private void decrementUsageInMongo(String itemId, int idPersonnage) {
@@ -253,27 +306,53 @@ public class InventaireDAOImpl implements InventaireDAO {
             return;
         }
 
-        List<Document> items = (List<Document>) inventoryDoc.get("items");
+        Object objItems = inventoryDoc.get("items");
+        if (!(objItems instanceof List<?>)) {
+            System.out.println("Format d'inventaire incorrect pour idPersonnage = " + idPersonnage);
+            return;
+        }
+
+        List<?> rawItems = (List<?>) objItems;
+        List<Document> items = new ArrayList<>();
+        for (Object o : rawItems) {
+            if (o instanceof Document) {
+                items.add((Document) o);
+            } else {
+                items.add(null); // ou gérer autrement si tu préfères
+            }
+        }
+
         boolean updated = false;
 
         for (Document doc : items) {
             if (doc != null && itemId.equals(doc.getString("_id"))) {
                 int usage = doc.getInteger("Usage_Time", 0);
-                // Ne pas décrémenter si Usage_Time est déjà à 0
                 if (usage > 0) {
-                    doc.put("Usage_Time", usage - 1); // Décrémenter Usage_Time
+                    doc.put("Usage_Time", usage - 1);
                     updated = true;
                 }
                 break;
             }
-            // Si l'item est dans un coffre
             if (doc != null && "Coffre".equals(doc.getString("type"))) {
-                List<Document> contenu = (List<Document>) doc.get("contenu");
+                Object objContenu = doc.get("contenu");
+                if (!(objContenu instanceof List<?>)) {
+                    continue;
+                }
+                List<?> rawContenu = (List<?>) objContenu;
+                List<Document> contenu = new ArrayList<>();
+                for (Object o : rawContenu) {
+                    if (o instanceof Document) {
+                        contenu.add((Document) o);
+                    } else {
+                        contenu.add(null);
+                    }
+                }
+
                 for (Document itemDoc : contenu) {
                     if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
                         int usage = itemDoc.getInteger("Usage_Time", 0);
                         if (usage > 0) {
-                            itemDoc.put("Usage_Time", usage - 1); // Décrémenter Usage_Time
+                            itemDoc.put("Usage_Time", usage - 1);
                             updated = true;
                         }
                         break;
@@ -292,13 +371,6 @@ public class InventaireDAOImpl implements InventaireDAO {
             System.out.println("Item non trouvé pour décrément usage : " + itemId);
         }
     }
-
-
-
-
-
-
-
 
 
 
@@ -357,43 +429,60 @@ public class InventaireDAOImpl implements InventaireDAO {
 
 
     private int RecupererUsageItem(String itemId, int idPersonnage) {
-        // Cherche l'inventaire du personnage par ID
         Document query = new Document("idPersonnage", idPersonnage);
-        Document inventory = collection.find(query).first();  // Recherche dans la collection d'inventaires
+        Document inventory = collection.find(query).first();
 
         if (inventory != null) {
-            // Récupère la liste des items de l'inventaire
-            List<Document> items = (List<Document>) inventory.get("items");
+            Object objItems = inventory.get("items");
+            if (!(objItems instanceof List<?>)) {
+                System.out.println("Format d'inventaire incorrect pour idPersonnage = " + idPersonnage);
+                return 0;
+            }
 
-            // Cherche dans l'inventaire principal
-            for (Document item : items) {
-                if (item != null && itemId.equals(item.getString("_id"))) {
-                    // Si l'item est trouvé, retourne son Usage_Time
-                    return item.getInteger("Usage_Time", 0);  // Si Usage_Time n'existe pas, retourne 0
+            List<?> rawItems = (List<?>) objItems;
+            List<Document> items = new ArrayList<>();
+            for (Object o : rawItems) {
+                if (o instanceof Document) {
+                    items.add((Document) o);
+                } else {
+                    items.add(null);  // ou gérer différemment selon besoin
                 }
             }
 
-            // Si l'item n'est pas trouvé dans l'inventaire principal, cherche dans les coffres
+            // Chercher dans inventaire principal
+            for (Document item : items) {
+                if (item != null && itemId.equals(item.getString("_id"))) {
+                    return item.getInteger("Usage_Time", 0);
+                }
+            }
+
+            // Chercher dans contenu des coffres
             for (Document item : items) {
                 if (item != null && "Coffre".equals(item.getString("type"))) {
-                    // Si c'est un coffre, récupère le contenu du coffre
-                    List<Document> contenu = (List<Document>) item.get("contenu");
-                    if (contenu != null) {
-                        for (Document itemDoc : contenu) {
-                            // Cherche l'item dans le contenu du coffre
-                            if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
-                                // Si l'item est trouvé dans le coffre, retourne son Usage_Time
-                                return itemDoc.getInteger("Usage_Time", 0);
-                            }
+                    Object objContenu = item.get("contenu");
+                    if (!(objContenu instanceof List<?>)) {
+                        continue;
+                    }
+                    List<?> rawContenu = (List<?>) objContenu;
+                    List<Document> contenu = new ArrayList<>();
+                    for (Object o : rawContenu) {
+                        if (o instanceof Document) {
+                            contenu.add((Document) o);
+                        } else {
+                            contenu.add(null);
+                        }
+                    }
+
+                    for (Document itemDoc : contenu) {
+                        if (itemDoc != null && itemId.equals(itemDoc.getString("_id"))) {
+                            return itemDoc.getInteger("Usage_Time", 0);
                         }
                     }
                 }
             }
         }
-        // Si l'item n'est trouvé ni dans l'inventaire principal ni dans le coffre, retourne 0
         return 0;
     }
-
 
 
 
