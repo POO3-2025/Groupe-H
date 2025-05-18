@@ -27,8 +27,9 @@ public class UserRepositoryTest {
 
     @BeforeEach
     void setup() {
-        userRepository = new UserRepository();
+        userRepository = new UserRepository("mysqltest");  // utilise la clé de test
     }
+
 
     @BeforeEach
     public void displayTestName(TestInfo testInfo) {

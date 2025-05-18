@@ -43,6 +43,7 @@ public class DatabaseConnection {
             );
             config = JsonParser.parseReader(reader).getAsJsonObject();
             reader.close();
+            System.out.println("Config loaded: " + config);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Erreur lors du chargement de config.json !");

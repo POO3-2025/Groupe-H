@@ -12,13 +12,25 @@ import java.sql.SQLException;
 @Repository
 public class UserRepository {
 
-    // Clé config pour la connexion SQL, peut être 'mysqlproduction' ou autre selon config JSON
-    private static final String DB_KEY = "mysqlproduction";
+    // Clé par défaut : production
+    private static final String DEFAULT_DB_KEY = "mysqlproduction";
+
+    private final String dbKey;
+
+    // Constructeur par défaut qui utilise la clé par défaut (prod)
+    public UserRepository() {
+        this.dbKey = DEFAULT_DB_KEY;
+    }
+
+    // Constructeur pour injecter une autre clé (ex: "mysqltest")
+    public UserRepository(String dbKey) {
+        this.dbKey = dbKey;
+    }
 
     public void save(User user) {
         String sql = "INSERT INTO users (username, password,isLogged) VALUES (?, ?, ?)";
 
-        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(DB_KEY);
+        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(dbKey);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, user.getUsername());
@@ -34,7 +46,7 @@ public class UserRepository {
     public User findByUsername(String username) {
         String sql = "SELECT * FROM users WHERE username = ?";
 
-        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(DB_KEY);
+        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(dbKey);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
@@ -59,7 +71,7 @@ public class UserRepository {
     public boolean existsByUsername(String username) {
         String sql = "SELECT COUNT(*) FROM users WHERE username = ?";
 
-        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(DB_KEY);
+        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(dbKey);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, username);
@@ -75,10 +87,11 @@ public class UserRepository {
 
         return false;
     }
+
     public void updateIsLogged(int userId, int isLogged) {
         String sql = "UPDATE users SET isLogged = ? WHERE id = ?";
 
-        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(DB_KEY);
+        try (Connection conn = DatabaseConnection.getInstance().getSQLConnection(dbKey);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, isLogged);
@@ -90,3 +103,4 @@ public class UserRepository {
         }
     }
 }
+
