@@ -573,12 +573,28 @@ public class InventaireDAOImpl implements InventaireDAO {
 
         if (inventaireDoc == null) return new ArrayList<>();
 
-        List<Document> items = (List<Document>) inventaireDoc.get("items");
+        Object objItems = inventaireDoc.get("items");
+        if (!(objItems instanceof List<?>)) {
+            return new ArrayList<>();
+        }
+        List<?> rawList = (List<?>) objItems;
+
+        List<Document> items = new ArrayList<>();
+        for (Object o : rawList) {
+            if (o instanceof Document) {
+                items.add((Document) o);
+            }
+        }
+
         for (Document item : items) {
             if (item != null && "Coffre".equals(item.getString("type"))) {
                 List<Item> contenu = new ArrayList<>();
-                List<Object> rawContenu = (List<Object>) item.get("contenu");
-                if (rawContenu == null) continue;
+                Object rawContenuObj = item.get("contenu");
+                if (!(rawContenuObj instanceof List<?>)) {
+                    continue;
+                }
+                List<?> rawContenu = (List<?>) rawContenuObj;
+
                 for (Object obj : rawContenu) {
                     if (obj instanceof Document doc) {
                         String nom = doc.getString("nom");
@@ -590,9 +606,9 @@ public class InventaireDAOImpl implements InventaireDAO {
                 return contenu;
             }
         }
-
         return new ArrayList<>();
     }
+
 
     public boolean ajouterItemDansCoffre(Item item, int idPersonnage) {
         Document query = new Document("idPersonnage", idPersonnage);

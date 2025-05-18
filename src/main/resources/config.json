@@ -17,7 +17,7 @@
         "Port": "3306",
         "UserName": "root",
         "Password": "",
-        "DBName": "mysqltest"
+        "DBName": "projetdarktowerTest"
       }
     },
     "MongoDBProduction": {
@@ -39,7 +39,7 @@
         "Port": "27017",
         "UserName": "",
         "Password": "",
-        "DBName": "MongoDBTest"
+        "DBName": "GameTest"
       }
     }
   }

@@ -8,19 +8,25 @@ import java.util.List;
 
 public interface InventaireDAO {
 
+    boolean hasCoffreInInventory(int idPersonnage);
+
     boolean ajouterItem(Item item, int idPersonnage);
 
     List<Item> chargerInventaire(int idPersonnage);
 
-    Item recupererItemParId(String itemId,int idPersonnage);
+    Item recupererItemParId(String itemId, int idPersonnage);
 
-    boolean hasCoffreInInventory(int userId);
+    String DeleteItem(String itemId);
+
+    UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible, int UserId);
 
     void initialiserInventaireVide(int idPersonnage);
 
     void viderInventaire(int idPersonnage);
 
-    String DeleteItem(String itemId);
+    List<Item> recupererContenuCoffre(int idPersonnage);
 
-    UseItemResult UseItem(Item item, Personnage utilisateur, Personnage cible,int UserId);
+    boolean ajouterItemDansCoffre(Item item, int idPersonnage);
+
+    boolean supprimerItemDuCoffre(String itemId, int idPersonnage);
 }
