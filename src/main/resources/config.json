@@ -3,7 +3,7 @@
     "mysqlproduction": {
       "BDCredentials": {
         "DBType": "mysql",
-        "HostName": "localhost",
+        "HostName": "10.201.146.65",
         "UserName": "root",
         "Port": "3306",
         "Password": "",
@@ -13,7 +13,7 @@
     "mysqltest": {
       "BDCredentials": {
         "DBType": "mysql",
-        "HostName": "localhost",
+        "HostName": "10.201.146.65",
         "Port": "3306",
         "UserName": "root",
         "Password": "",
@@ -24,7 +24,7 @@
       "ConnectionType": "NoSQL",
       "DBType": "mongodb",
       "BDCredentials": {
-        "HostName": "localhost",
+        "HostName": "10.201.146.65",
         "Port": "27017",
         "UserName": "",
         "Password": "",
@@ -35,7 +35,7 @@
       "ConnectionType": "NoSQL",
       "DBType": "mongodb",
       "BDCredentials": {
-        "HostName": "localhost",
+        "HostName": "10.201.146.65",
         "Port": "27017",
         "UserName": "",
         "Password": "",
