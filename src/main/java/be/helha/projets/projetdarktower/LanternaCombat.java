@@ -142,7 +142,7 @@ public class LanternaCombat {
                 }
 
                 String json = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
-                String response = sendRequest("http://10.201.144.1:8081/register", "POST", json, null);
+                String response = sendRequest("http://10.201.146.2:8081/register", "POST", json, null);
 
                 if (response.contains("existe déjà") || response.contains("409")) {
                     MessageDialog.showMessageDialog(gui, "Nom déjà utilisé", "Ce nom d'utilisateur est déjà pris. Choisissez-en un autre.");
@@ -182,7 +182,7 @@ public class LanternaCombat {
         panel.addComponent(new Button("Connexion", () -> {
             try {
                 String json = "{\"username\":\"" + usernameBox.getText() + "\",\"password\":\"" + passwordBox.getText() + "\"}";
-                String response = sendRequest("http://10.201.144.1:8081/login", "POST", json, null);
+                String response = sendRequest("http://10.201.146.2:8081/login", "POST", json, null);
 
                 // Si c’est une erreur
                 if (response.startsWith("ERROR_403:") || response.startsWith("ERROR_401:")) {
@@ -936,7 +936,7 @@ public class LanternaCombat {
 
     private static void viderInventaire(int idPersonnage) {
         try {
-            sendRequest("http://10.201.144.1:8081/inventaire/" + idPersonnage + "/vider", "POST", null, jwtToken);
+            sendRequest("http://10.201.146.2:8081/inventaire/" + idPersonnage + "/vider", "POST", null, jwtToken);
         } catch (Exception e) {
             System.err.println("Erreur lors de la vidange de l'inventaire : " + e.getMessage());
         }
@@ -944,7 +944,7 @@ public class LanternaCombat {
 
     private static void initialiserInventaire(int idPersonnage) {
         try {
-            sendRequest("http://10.201.144.1:8081/inventaire/" + idPersonnage + "/initialiser", "POST", null, jwtToken);
+            sendRequest("http://10.201.146.2:8081/inventaire/" + idPersonnage + "/initialiser", "POST", null, jwtToken);
         } catch (Exception e) {
             System.err.println("Erreur lors de l'initialisation de l'inventaire : " + e.getMessage());
         }
@@ -952,7 +952,7 @@ public class LanternaCombat {
     private static void updateIsLoggedIn(int userId, int isLoggedIn) {
         try {
 
-            String url = String.format("http://10.201.144.1:8081/update-is-logged/%d?isLogged=%d", userId, isLoggedIn);
+            String url = String.format("http://10.201.146.2:8081/update-is-logged/%d?isLogged=%d", userId, isLoggedIn);
 
             sendRequest(url, "PUT", null, jwtToken);
 
@@ -966,7 +966,7 @@ public class LanternaCombat {
         try {
             ObjectMapper mapper = new ObjectMapper();
             String json = mapper.writeValueAsString(item);
-            String response = sendRequest("http://10.201.144.1:8081/inventaire/" + idPersonnage + "/ajouter", "POST", json, jwtToken);
+            String response = sendRequest("http://10.201.146.2:8081/inventaire/" + idPersonnage + "/ajouter", "POST", json, jwtToken);
             return response.contains("succès");
         } catch (Exception e) {
             System.err.println("Erreur lors de l'ajout de l'item : " + e.getMessage());
@@ -976,7 +976,7 @@ public class LanternaCombat {
 
     private static List<Item> chargerInventaire(int idPersonnage) {
         try {
-            String response = sendRequest("http://10.201.144.1:8081/inventaire/" + idPersonnage + "/charger", "GET", null, jwtToken);
+            String response = sendRequest("http://10.201.146.2:8081/inventaire/" + idPersonnage + "/charger", "GET", null, jwtToken);
             ObjectMapper mapper = new ObjectMapper();
             return mapper.readValue(response, new TypeReference<List<Item>>() {});
         } catch (Exception e) {
@@ -986,7 +986,7 @@ public class LanternaCombat {
     }
     private static List<Item> recupererContenuCoffre(int idPersonnage) {
         try {
-            String url = "http://10.201.144.1:8081/inventaire/" + idPersonnage + "/coffre";
+            String url = "http://10.201.146.2:8081/inventaire/" + idPersonnage + "/coffre";
             String response = sendRequest(url, "GET", null, jwtToken);
             ObjectMapper mapper = new ObjectMapper();
             return mapper.readValue(response, new TypeReference<List<Item>>() {});
@@ -998,7 +998,7 @@ public class LanternaCombat {
 
     private static boolean ajouterItemDansCoffre(Item item, int idPersonnage) {
         try {
-            String url = "http://10.201.144.1:8081/inventaire/" + idPersonnage + "/coffre/ajouter";
+            String url = "http://10.201.146.2:8081/inventaire/" + idPersonnage + "/coffre/ajouter";
             ObjectMapper mapper = new ObjectMapper();
             String body = mapper.writeValueAsString(item);
             String response = sendRequest(url, "POST", body, jwtToken);
@@ -1015,7 +1015,7 @@ public class LanternaCombat {
 
     private static boolean supprimerItemDuCoffre(String itemId, int idPersonnage) {
         try {
-            String url = "http://10.201.144.1:8081/inventaire/" + idPersonnage + "/coffre/" + itemId;
+            String url = "http://10.201.146.2:8081/inventaire/" + idPersonnage + "/coffre/" + itemId;
             String response = sendRequest(url, "DELETE", null, jwtToken);
             return response.contains("succès");
         } catch (Exception e) {
@@ -1026,7 +1026,7 @@ public class LanternaCombat {
 
     private static boolean supprimerItem(String itemId) {
         try {
-            String url = "http://10.201.144.1:8081/inventaire/item/" + itemId;
+            String url = "http://10.201.146.2:8081/inventaire/item/" + itemId;
             String response = sendRequest(url, "DELETE", null, jwtToken);
             return response.contains("succès");
         } catch (Exception e) {
@@ -1037,7 +1037,7 @@ public class LanternaCombat {
 
     private static boolean hasCoffreInInventory(int idPersonnage) {
         try {
-            String url = "http://10.201.144.1:8081/inventaire/coffre/existe/" + idPersonnage;
+            String url = "http://10.201.146.2:8081/inventaire/coffre/existe/" + idPersonnage;
             System.out.println("JWT Token utilisé : " + jwtToken);
             String response = sendRequest(url, "GET", null, jwtToken);
             return Boolean.parseBoolean(response);
@@ -1112,7 +1112,7 @@ public class LanternaCombat {
     public static UseItemResult callUseItemAPI(String idPersonnage, int idUser, String itemId, String cibleId) {
         try {
             String encodedIdPersonnage = URLEncoder.encode(idPersonnage, StandardCharsets.UTF_8);
-            String urlString = "http://10.201.144.1:8081/Combat/" + idUser + "/" + encodedIdPersonnage + "/use-item";
+            String urlString = "http://10.201.146.2:8081/Combat/" + idUser + "/" + encodedIdPersonnage + "/use-item";
 
             JSONObject requestBody = new JSONObject();
             requestBody.put("itemId", itemId);
@@ -1153,7 +1153,7 @@ public class LanternaCombat {
 
     public static void envoyerChoixPersonnage(String characterId, int userId, String jwtToken) {
         try {
-            URI uri = new URI("http://10.201.144.1:8081/characters/select");
+            URI uri = new URI("http://10.201.146.2:8081/characters/select");
             URL url = uri.toURL();
 
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();

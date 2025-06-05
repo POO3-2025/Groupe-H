@@ -22,6 +22,7 @@ import java.util.List;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+
 @WebMvcTest(InventaireController.class)
 @Import(InventaireControllerTest.TestConfig.class)  // Injecte le mock dans le contexte Spring
 public class InventaireControllerTest {
