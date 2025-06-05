@@ -21,7 +21,7 @@ public class Minotaurus extends Personnage {
             degats /= 2;
         }
 
-        // Passif de JoWind : 20% de chance d’esquiver complètement
+        // Passif de JoWind : 30% de chance d’esquiver complètement
         if (cible instanceof JoWind) {
             if (Math.random() < 0.30) {
                 System.out.println(cible.getNom() + " esquive l'attaque !");

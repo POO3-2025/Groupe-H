@@ -25,7 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // 🔓 Ignorer les endpoints publics
+        //  Ignorer les endpoints publics
         String path = request.getServletPath();
         List<String> publicEndpoints = List.of("/login", "/register");
         if (publicEndpoints.contains(path)) {
@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 🔐 Récupération du token JWT
+        //  Récupération du token JWT
         String bearer = request.getHeader("Authorization");
         String token = null;
 
@@ -41,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             token = bearer.substring(7);
         }
 
-        // ✅ Si token valide → authentification
+        //  Si token valide → authentification
         if (token != null && jwtUtil.validateJwtToken(token)) {
             String username = jwtUtil.getUsernameFromJwtToken(token);
 

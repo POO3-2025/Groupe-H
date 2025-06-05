@@ -309,7 +309,7 @@ public class InventaireDAOImpl implements InventaireDAO {
             if (o instanceof Document) {
                 items.add((Document) o);
             } else {
-                items.add(null); // ou gérer autrement si tu préfères
+                items.add(null);
             }
         }
 
