@@ -29,7 +29,7 @@ class FistFireTest {
     void testInitialisation() {
         assertEquals("Fist Fire", fistFire.getNom());
         assertEquals(150, fistFire.getPointsDeVie());
-        assertEquals(60, fistFire.getAttaque());
+        assertEquals(2000, fistFire.getAttaque());
     }
 
     @Test
@@ -56,7 +56,7 @@ class FistFireTest {
         int pvAvant = cible.getPointsDeVie();
         int degatsInfliges = fistFire.attaquer(cible);
 
-        assertTrue(degatsInfliges == 60 || degatsInfliges == 120,
+        assertTrue(degatsInfliges == 2000 || degatsInfliges == 4000,
                 "Dégâts doivent être 60 (normal) ou 120 (critique)");
 
         assertEquals(pvAvant - degatsInfliges, cible.getPointsDeVie());

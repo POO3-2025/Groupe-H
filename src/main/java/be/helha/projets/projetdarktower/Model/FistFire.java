@@ -7,7 +7,7 @@ public class FistFire extends Personnage {
     private static final double CHANCE_CRITIQUE = 0.4; // 40% crit
 
     public FistFire(String id) {
-        super(id, "Fist Fire", 150, 60); // PV à 150, ATK à 60
+        super(id, "Fist Fire", 150, 2000); // PV à 150, ATK à 60
     }
 
     @Override
